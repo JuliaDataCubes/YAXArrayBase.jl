@@ -23,7 +23,7 @@ dimvals(x::DimensionalArray,i) = DimensionalData.dims(x)[i].val
 end
 
 @require AxisArrays="39de3d68-74b9-583c-8d2d-e117c070f3a9" begin
-using .AxisArrays: AxisArrays
+using .AxisArrays: AxisArrays, AxisArray
 
 dimname(a::AxisArray, i) = AxisArrays.axisnames(a)[i]
 dimnames(a::AxisArray) = AxisArrays.axisnames(a)
