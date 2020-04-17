@@ -20,3 +20,5 @@ getattributes(x) = Dict{String,Any}()
 getdata(x) = x
 
 valfromaxis(x) = x
+
+yaxconvert(T::Type{<:Any},x) = T(x)
