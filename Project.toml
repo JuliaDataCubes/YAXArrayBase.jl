@@ -12,6 +12,10 @@ julia = "^1"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
+AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
+AxisIndices = "f52c9ee2-1b1c-4fd8-8546-6350938c7f11"
 
 [targets]
-test = ["Test"]
+test = ["Test", "DimensionalData", "AxisArrays", "ArchGDAL", "AxisIndices"]

@@ -24,11 +24,11 @@ function add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   za
 end
 
-#Special case for writing String Arrays
-function add_var(p::ZarrDataset, a::AbstractArray, varname, s, dimnames, attr;
+#Special case for init with Arrays
+function add_var(p::ZarrDataset, a::AbstractArray, varname, dimnames, attr;
   kwargs...)
   T = to_zarrtype(a)
-  b = add_var(p,T,varname,s,dimnames,attr;kwargs...)
+  b = add_var(p,T,varname,size(a),dimnames,attr;kwargs...)
   b .= a
   a
 end
@@ -38,4 +38,6 @@ create_empty(::Type{ZarrDataset}, path) = ZarrDataset(zgroup(path))
 backendlist[:zarr] = ZarrDataset
 push!(backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
 
+allow_parallel_write(::ZarrDataset) = true
+allow_missings(::ZarrDataset) = true
 to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g)

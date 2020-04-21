@@ -22,7 +22,7 @@ create_empty(T::Type,path) =
 
 Add a new variable to the dataset with element type `T`,
 name `name`, size `s` and depending on the dimensions `dimlist`
-given by a list of Strings. `atts` is a list of attributes.
+given by a list of Strings. `atts` is a Dict with attributes.
 """
 function add_var(ds, T, name, s, dimlist, atts;kwargs...) end
 
@@ -34,19 +34,26 @@ Returns true if different chunks of a dataset can be written to by
 """
 allow_parallel_write(ds) = false
 
-allow_missings(ds) = true
+"""
+    allow_missings(ds)
 
+Returns true if Union{T,Missing} is an allowed data type for the backend
+and if an array containing missings can be written to the array.
+"""
+allow_missings(ds) = true
 #Fallback for writing array
-function add_var(ds,x::AbstractArray,name,s,dimlist,atts;kwargs...)
-  a = add_var(ds,eltype(x),name,s,dimlist,atts;kwargs...)
-  if ds isa NetCDFDataset
-    sleep(0.1)
-  end
+function add_var(ds,x::AbstractArray,name,dimlist,atts;kwargs...)
+  a = add_var(ds,eltype(x),name,size(x),dimlist,atts;kwargs...)
   a .= x
   a
 end
 
 using DataStructures: OrderedDict
+"""
+    YAXArrayBase.backendlist
+
+List of symbols defining dataset backends.
+"""
 backendlist = OrderedDict{Symbol, Any}(
   :array => Array,
 )
