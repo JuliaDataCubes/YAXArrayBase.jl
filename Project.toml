@@ -16,6 +16,9 @@ DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
 ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
 AxisIndices = "f52c9ee2-1b1c-4fd8-8546-6350938c7f11"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
+Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
+
 
 [targets]
-test = ["Test", "DimensionalData", "AxisArrays", "ArchGDAL", "AxisIndices"]
+test = ["Test", "DimensionalData", "AxisArrays", "ArchGDAL", "AxisIndices", "NetCDF", "Zarr"]

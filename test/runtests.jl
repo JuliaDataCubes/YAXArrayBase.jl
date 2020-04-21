@@ -1,5 +1,8 @@
 using YAXArrayBase
 using Test
-
-include("arrays.jl")
+@testset "Arrays" begin
+  include("arrays.jl")
+end
+@testset "Datasets" begin
 include("datasets.jl")
+end
