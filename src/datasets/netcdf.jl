@@ -12,13 +12,15 @@ as a data sink:
 """
 struct NetCDFDataset
   filename::String
+  mode::UInt16
 end
+NetCDFDataset(filename) = NetCDFDataset(filename,NC_NOWRITE)
 
 get_var_dims(ds::NetCDFDataset,name) = NetCDF.open(v->map(i->i.name,v[name].dim),ds.filename)
 get_varnames(ds::NetCDFDataset) = NetCDF.open(v->collect(keys(v.vars)),ds.filename)
 get_var_attrs(ds::NetCDFDataset, name) = NetCDF.open(v->v[name].atts,ds.filename)
 function Base.getindex(ds::NetCDFDataset, i)
-  NetCDF.open(ds.filename,i,mode=NC_WRITE)
+  NetCDF.open(ds.filename,i,mode=ds.mode)
 end
 Base.haskey(ds::NetCDFDataset,k) = NetCDF.open(nc->haskey(nc.vars,k),ds.filename)
 
@@ -26,12 +28,12 @@ function add_var(p::NetCDFDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, compress = -1)
   dimsdescr = Iterators.flatten(zip(dimnames,s))
   nccreate(p.filename, varname, dimsdescr..., atts = attr, t=T, chunksize=chunksize, compress=compress)
-  NetCDF.open(p.filename,varname,mode=NC_WRITE)
+  NetCDF.open(p.filename,varname,mode=ds.mode)
 end
 
 function create_empty(::Type{NetCDFDataset}, path)
   NetCDF.create(path, NcVar[])
-  NetCDFDataset(path)
+  NetCDFDataset(path,NC_WRITE)
 end
 
 allow_parallel_write(::NetCDFDataset) = false

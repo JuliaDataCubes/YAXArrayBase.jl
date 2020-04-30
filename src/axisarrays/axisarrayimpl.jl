@@ -1,6 +1,6 @@
 @require ESDL="359177bc-a543-11e8-11b7-bb015dba3358" begin
 using .ESDL.Cubes: ESDLArray
-using .ESDL.Cubes.Axes: axsym
+using .ESDL.Cubes.Axes: axsym, RangeAxis, CategoricalAxis
 # Implementation for ESDLArray
 dimvals(x::ESDLArray, i) = x.axes[i].values
 
@@ -13,6 +13,13 @@ getattributes(x::ESDLArray) = x.properties
 iscontdim(x::ESDLArray, i) = isa(x.axes[i], RangeAxis)
 
 getdata(x::ESDLArray) = x.data
+
+function yaxcreate(::Type{ESDLArray},data, dimnames, dimvals, atts)
+  axlist = map(dimnames, dimvals) do dn, dv
+    iscontdimval(dv) ? RangeAxis(dn,dv) : CategoricalAxis(dn,dv)
+  end
+  ESDLArray(axlist, data, atts)
+end
 end
 
 @require DimensionalData="0703355e-b756-11e9-17c0-8b28908087d0" begin
@@ -28,11 +35,11 @@ getdata(x::DimensionalArray) = data(x)
 
 getattributes(x::DimensionalArray) = metadata(x)
 
-function yaxconvert(::Type{<:DimensionalArray},x)
-  d = ntuple(ndims(x)) do i
-    Dim{Symbol(dimname(x,i))}(dimvals(x,i))
+function yaxcreate(::Type{<:DimensionalArray},data,dnames,dvals,atts)
+  d = ntuple(ndims(data)) do i
+    Dim{Symbol(dnames[i])}(dvals[i])
   end
-  DimensionalArray(getdata(x),d,metadata = getattributes(x))
+  DimensionalArray(data,d,metadata = atts)
 end
 end
 
@@ -44,11 +51,11 @@ dimnames(a::AxisArray) = AxisArrays.axisnames(a)
 dimvals(a::AxisArray, i) = AxisArrays.axisvalues(a)[i]
 iscontdim(a::AxisArray, i) = AxisArrays.axistrait(AxisArrays.axes(a,i)) <: AxisArrays.Dimensional
 getdata(a::AxisArray) = parent(a)
-function yaxconvert(::Type{<:AxisArray}, x)
-  d = ntuple(ndims(x)) do i
-    dimname(x,i) => dimvals(x,i)
+function yaxcreate(::Type{<:AxisArray}, data, dnames, dvals, atts)
+  d = ntuple(ndims(data)) do i
+    dnames[i] => dvals[i]
   end
-  AxisArray(getdata(x); d...)
+  AxisArray(data; d...)
 end
 end
 
@@ -59,8 +66,8 @@ valfromaxis(ax::AbstractAxis) = keys(ax)
 
 getdata(a::AxisIndicesArray) = parent(a)
 
-yaxconvert(::Type{<:AxisIndicesArray}, a) =
-  AxisIndicesArray(getdata(a), map(i->dimvals(a,i), 1:ndims(a))...)
+yaxcreate(::Type{<:AxisIndicesArray}, data, dnames, dvals, atts) =
+  AxisIndicesArray(data, map(i->dvals[i], 1:ndims(data))...)
 end
 
 @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" begin

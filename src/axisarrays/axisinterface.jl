@@ -1,3 +1,4 @@
+import Dates: TimeType
 # Functions to be implemented, so that an array type
 # can be used as an ESDLArray. Here fakkback methods are implemented
 # for the AbstractArray's
@@ -25,9 +26,9 @@ Returns a boolean indicating if the i-th dimension of the array
 should be interpreted as a continouus range (true) or as categorical (false).
 """
 function iscontdim(x, i)
-  v = dimvals(x,i)
-  (eltype(v) <: Number) && (issorted(v) || issorted(v,rev=true))
+  iscontdimval(dimvals(x,i))
 end
+iscontdimval(v) = (eltype(v) <: Union{Number,TimeType}) && (issorted(v) || issorted(v,rev=true))
 
 """
     iscompressed(x)
@@ -42,7 +43,7 @@ iscompressed(x) = false
 
 Returns a tuple of dimension names for al dimensions of x.
 """
-dimnames(x::AbstractArray) = ntuple(i->dimname(x,i), ndims(x))
+dimnames(x) = ntuple(i->dimname(x,i), ndims(x))
 
 """
     getattributes(x)
@@ -75,4 +76,12 @@ valfromaxis(x) = x
 
 Converts an AbstractArray x that implements the interface to type T.
 """
-yaxconvert(T::Type{<:Any},x) = T(x)
+yaxconvert(T::Type{<:Any},x) =
+  yaxcreate(T, getdata(x), dimnames(x),dimvals.(Ref(x),1:ndims(x)),getattributes(x))
+
+"""
+    yaxcreate(T::Type,data,dnames,dvals,attributes)
+
+Creates a new array with the given dimension names, values and attributes.
+"""
+function yaxcreate(T,data,dname,dvals,attributes) end
