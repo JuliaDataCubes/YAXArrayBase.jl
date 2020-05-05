@@ -28,7 +28,7 @@ function add_var(p::NetCDFDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, compress = -1)
   dimsdescr = Iterators.flatten(zip(dimnames,s))
   nccreate(p.filename, varname, dimsdescr..., atts = attr, t=T, chunksize=chunksize, compress=compress)
-  NetCDF.open(p.filename,varname,mode=ds.mode)
+  NetCDF.open(p.filename,varname,mode=p.mode)
 end
 
 function create_empty(::Type{NetCDFDataset}, path)
