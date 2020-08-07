@@ -1,6 +1,6 @@
 import Dates: TimeType
 # Functions to be implemented, so that an array type
-# can be used as an ESDLArray. Here fakkback methods are implemented
+# can be used as an YAXArray. Here fakkback methods are implemented
 # for the AbstractArray's
 """
     dimvals(x, i)

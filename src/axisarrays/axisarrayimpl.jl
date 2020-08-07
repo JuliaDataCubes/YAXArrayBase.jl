@@ -1,27 +1,3 @@
-@require ESDL="359177bc-a543-11e8-11b7-bb015dba3358" begin
-using .ESDL.Cubes: ESDLArray
-using .ESDL.Cubes.Axes: axsym, RangeAxis, CategoricalAxis
-# Implementation for ESDLArray
-dimvals(x::ESDLArray, i) = x.axes[i].values
-
-function dimname(x::ESDLArray, i)
-  axsym(x.axes[i])
-end
-
-getattributes(x::ESDLArray) = x.properties
-
-iscontdim(x::ESDLArray, i) = isa(x.axes[i], RangeAxis)
-
-getdata(x::ESDLArray) = x.data
-
-function yaxcreate(::Type{ESDLArray},data, dimnames, dimvals, atts)
-  axlist = map(dimnames, dimvals) do dn, dv
-    iscontdimval(dv) ? RangeAxis(dn,dv) : CategoricalAxis(dn,dv)
-  end
-  ESDLArray(axlist, data, atts)
-end
-end
-
 @require DimensionalData="0703355e-b756-11e9-17c0-8b28908087d0" begin
 using .DimensionalData: DimensionalArray, DimensionalData, data, Dim, metadata
 
@@ -59,16 +35,16 @@ function yaxcreate(::Type{<:AxisArray}, data, dnames, dvals, atts)
 end
 end
 
-@require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" begin
-using .AxisIndices: AbstractAxis, AxisIndicesArray
-
-valfromaxis(ax::AbstractAxis) = keys(ax)
-
-getdata(a::AxisIndicesArray) = parent(a)
-
-yaxcreate(::Type{<:AxisIndicesArray}, data, dnames, dvals, atts) =
-  AxisIndicesArray(data, map(i->dvals[i], 1:ndims(data))...)
-end
+# @require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" begin
+# using .AxisIndices: AbstractAxis, AxisIndicesArray
+#
+# valfromaxis(ax::AbstractAxis) = keys(ax)
+#
+# getdata(a::AxisIndicesArray) = parent(a)
+#
+# yaxcreate(::Type{<:AxisIndicesArray}, data, dnames, dvals, atts) =
+#   AxisIndicesArray(data, map(i->dvals[i], 1:ndims(data))...)
+# end
 
 @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" begin
 import .ArchGDAL: RasterDataset, AbstractRasterBand,
