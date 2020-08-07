@@ -59,16 +59,16 @@ function __init__()
   end
   end
 
-  # @require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" begin
-  # using .AxisIndices: AbstractAxis, AxisIndicesArray
-  #
-  # valfromaxis(ax::AbstractAxis) = keys(ax)
-  #
-  # getdata(a::AxisIndicesArray) = parent(a)
-  #
-  # yaxcreate(::Type{<:AxisIndicesArray}, data, dnames, dvals, atts) =
-  #   AxisIndicesArray(data, map(i->dvals[i], 1:ndims(data))...)
-  # end
+  @require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" begin
+  using .AxisIndices: AbstractAxis,AxisIndices
+
+  valfromaxis(ax::AbstractAxis) = keys(ax)
+
+  getdata(a::AxisIndices.AxisArray) = parent(a)
+  
+  yaxcreate(::Type{<:AxisIndices.AxisArray}, data, dnames, dvals, atts) =
+    AxisIndices.AxisArray(data, map(i->dvals[i], 1:ndims(data))...)
+  end
 
   @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" begin
   import .ArchGDAL: RasterDataset, AbstractRasterBand,
