@@ -10,7 +10,7 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 
 [compat]
 julia = "^1"
-DataStructures = "0.17"
+DataStructures = "0.17, 0.18"
 Requires = "1"
 
 [extras]
