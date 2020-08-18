@@ -18,6 +18,7 @@ A package defining an interface to work with named dimension that might have val
 - AxisArrays
 - AxisIndices
 - YAXArrays
+- NamedDims
 - ArchGDAL raster types
 
 # Usage
