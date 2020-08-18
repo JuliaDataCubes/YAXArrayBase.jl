@@ -53,10 +53,27 @@ end
   AG=ArchGDAL
   r = AG.readraster(p)
   @test YAXArrayBase.dimnames(r) == (:Y, :X, :Band)
+  @test YAXArrayBase.dimname(r,1) == :Y
+  @test YAXArrayBase.dimname(r,2) == :X
+  @test YAXArrayBase.dimname(r,3) == :Band
   @test YAXArrayBase.dimvals(r,1) == -28493.166784412522:60.02213698319374:2298.189487965865
+  @test YAXArrayBase.dimvals(r,2) == 4.2558845438021915e6:-60.02213698319374:4.22503316539283e6
+  @test YAXArrayBase.dimvals(r,3) == ["Gray"]
+  @test_throws Exception YAXArrayBase.dimname(r,4)
+  @test_throws Exception YAXArrayBase.dimvals(r,4)
+  @test YAXArrayBase.iscontdim(r,1) == true
+  @test YAXArrayBase.iscontdim(r,2) == true
+  @test YAXArrayBase.iscontdim(r,3) == true
   @test YAXArrayBase.getattributes(r)["projection"] == "+proj=cea +lat_ts=33.75 +lon_0=-117.333333333333 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs"
   b = AG.getband(r,1)
   @test YAXArrayBase.dimnames(b) == (:Y, :X)
+  @test YAXArrayBase.dimname(b,1) == :Y
+  @test YAXArrayBase.dimname(b,2) == :X
   @test YAXArrayBase.dimvals(b,1) == -28493.166784412522:60.02213698319374:2298.189487965865
+  @test YAXArrayBase.dimvals(b,2) == 4.2558845438021915e6:-60.02213698319374:4.22503316539283e6
+  @test_throws Exception YAXArrayBase.dimname(b,3)
+  @test_throws Exception YAXArrayBase.dimvals(b,3)
+  @test YAXArrayBase.iscontdim(b,1) == true
+  @test YAXArrayBase.iscontdim(b,2) == true
   @test YAXArrayBase.getattributes(b)["projection"] == "+proj=cea +lat_ts=33.75 +lon_0=-117.333333333333 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs"
 end
