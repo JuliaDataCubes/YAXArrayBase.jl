@@ -76,8 +76,9 @@ valfromaxis(x) = x
 
 Converts an AbstractArray x that implements the interface to type T.
 """
-yaxconvert(T::Type{<:Any},x) =
+function yaxconvert(T::Type{<:Any},x)
   yaxcreate(T, getdata(x), dimnames(x),dimvals.(Ref(x),1:ndims(x)),getattributes(x))
+end
 
 """
     yaxcreate(T::Type,data,dnames,dvals,attributes)

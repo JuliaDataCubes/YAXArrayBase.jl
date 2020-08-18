@@ -35,16 +35,27 @@ function yaxcreate(::Type{<:AxisArray}, data, dnames, dvals, atts)
 end
 end
 
-# @require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" begin
-# using .AxisIndices: AbstractAxis, AxisIndicesArray
-#
-# valfromaxis(ax::AbstractAxis) = keys(ax)
-#
-# getdata(a::AxisIndicesArray) = parent(a)
-#
-# yaxcreate(::Type{<:AxisIndicesArray}, data, dnames, dvals, atts) =
-#   AxisIndicesArray(data, map(i->dvals[i], 1:ndims(data))...)
-# end
+@require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" begin
+using .AxisIndices: AbstractAxis
+
+valfromaxis(ax::AbstractAxis) = keys(ax)
+
+getdata(a::AxisIndices.AxisArray) = parent(a)
+
+yaxcreate(::Type{<:AxisIndices.AxisArray}, data, dnames, dvals, atts) =
+  AxisIndices.AxisArray(data, map(i->dvals[i], 1:ndims(data))...)
+end
+
+@require NamedDims="356022a1-0364-5f58-8944-0da4b18d706f" begin
+  using .NamedDims: NamedDimsArray
+  dimname(a::NamedDimsArray{N},i) where N = N[i]
+  dimnames(a::NamedDimsArray{N}) where N = N
+  getdata(a::NamedDimsArray) = parent(a)
+  function yaxcreate(::Type{<:NamedDimsArray},data, dnames, dvals, atts)
+    n = ntuple(i->dnames[i],ndims(data))
+    NamedDimsArray(data,n)
+  end
+end
 
 @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" begin
 import .ArchGDAL: RasterDataset, AbstractRasterBand,
