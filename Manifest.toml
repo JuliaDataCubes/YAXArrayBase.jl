@@ -13,6 +13,11 @@ version = "0.17.11"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[DiskArrays]]
+git-tree-sha1 = "3bfd0eb19711297e1b3656b7d4709f7b4b240195"
+uuid = "3c3547ce-8d99-4f5e-a174-61eb10b00ae3"
+version = "0.2.4"
+
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
