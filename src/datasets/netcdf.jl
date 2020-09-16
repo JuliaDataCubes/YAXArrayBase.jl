@@ -52,7 +52,7 @@ function add_var(p::NetCDFDataset, T::Type, varname, s, dimnames, attr;
 end
 
 function create_empty(::Type{NetCDFDataset}, path)
-  NetCDF.create(path, NcVar[])
+  NetCDF.create(_->nothing, path, NcVar[])
   NetCDFDataset(path)
 end
 
