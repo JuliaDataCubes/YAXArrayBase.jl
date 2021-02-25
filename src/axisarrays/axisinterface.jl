@@ -43,7 +43,7 @@ iscompressed(x) = false
 
 Returns a tuple of dimension names for al dimensions of x.
 """
-dimnames(x) = ntuple(i->dimname(x,i), ndims(x))
+dimnames(x) = ntuple(i->dimname(x,i), ndims(getdata(x)))
 
 """
     getattributes(x)
@@ -77,7 +77,8 @@ valfromaxis(x) = x
 Converts an AbstractArray x that implements the interface to type T.
 """
 function yaxconvert(T::Type{<:Any},x)
-  yaxcreate(T, getdata(x), dimnames(x),dimvals.(Ref(x),1:ndims(x)),getattributes(x))
+  data = getdata(x)
+  yaxcreate(T, data, dimnames(x),dimvals.(Ref(x),1:ndims(data)),getattributes(x))
 end
 
 """

@@ -4,6 +4,7 @@ using DataStructures: OrderedDict
 
 include("datasets/datasetinterface.jl")
 include("axisarrays/axisinterface.jl")
+include("axisarrays/namedtuple.jl")
 
 defaultfillval(T::Type{<:AbstractFloat}) = convert(T,1e32)
 defaultfillval(::Type{Float16}) = Float16(3.2e4)
