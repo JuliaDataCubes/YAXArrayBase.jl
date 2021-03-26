@@ -21,16 +21,16 @@ h = get_var_handle(ds_nc, "tas")
 end
 
 @testset "Reading Zarr" begin
-  p = "gs://cmip6/CMIP/NCAR/CESM2/historical/r9i1p1f1/Amon/tas/gn/"
-  ds_zarr = to_dataset(p)
+p = "gs://cmip6/CMIP6/HighResMIP/CMCC/CMCC-CM2-HR4/highresSST-present/r1i1p1f1/6hrPlev/psl/gn/v20170706/"
+ds_zarr = to_dataset(p)
 vn = get_varnames(ds_zarr)
-@test sort(vn) == ["lat", "lat_bnds", "lon", "lon_bnds", "tas", "time", "time_bnds"]
-@test get_var_dims(ds_zarr, "tas") == ["lon", "lat", "time"]
+@test sort(vn) == ["lat", "lat_bnds", "lon", "lon_bnds", "psl", "time", "time_bnds"]
+@test get_var_dims(ds_zarr, "psl") == ["lon", "lat", "time"]
 @test get_var_dims(ds_zarr, "time") == ["time"]
-@test get_var_dims(ds_zarr, "time_bnds") == ["nbnd", "time"]
-@test get_var_attrs(ds_zarr,"tas")["long_name"] == "Near-Surface Air Temperature"
-h = get_var_handle(ds_zarr, "tas")
-@test all(isapprox.(h[1:2,1:2,1], [244.39726 245.79759; 244.39726 245.7486]))
+@test get_var_dims(ds_zarr, "time_bnds") == ["bnds", "time"]
+@test get_var_attrs(ds_zarr,"psl")["long_name"] == "Sea Level Pressure"
+h = get_var_handle(ds_zarr, "psl")
+@test all(isapprox.(h[1:2,1:2,1], [99360.8  99334.9; 99360.8  99335.4]))
 @test allow_parallel_write(ds_zarr) == true
 @test allow_missings(ds_zarr) == true
 end
