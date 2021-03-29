@@ -36,8 +36,7 @@ function __init__()
 
   @require NetCDF="30363a11-5582-574a-97bb-aa9a979735b9" include("datasets/netcdf.jl")
 
-
-
+  @require CfGRIB="b476ad61-2aff-463c-b862-1d4433a0d503" include("datasets/grib.jl")
 
 end
 
