@@ -40,7 +40,7 @@ function dimname(::AbstractRasterBand, i)
     elseif i == 2
         return :X
     else
-        error("RasterDataset only has 3 dimiensions")
+        error("RasterDataset only has 3 dimensions")
     end
 end
 function dimvals(b::AbstractRasterBand, i)
@@ -50,7 +50,7 @@ function dimvals(b::AbstractRasterBand, i)
     elseif i == 2
         range(geo[4],length=height(b), step=geo[6])
     else
-        error("RasterDataset only has 3 dimiensions")
+        error("RasterDataset only has 3 dimensions")
     end
 end
 iscontdim(a::AbstractRasterBand, i) = true
