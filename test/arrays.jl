@@ -28,6 +28,15 @@ end
     @test dimvals(d,2) == 1.5:0.5:3.0
 end
 
+@testset "NamedTuples" begin
+    d = yaxconvert(NamedTuple,M())
+    @test d isa NamedTuple
+    @test getdata(d) == reshape(1:12,3,4)
+    @test YAXArrayBase.dimnames(d) == (:x, :y)
+    @test dimvals(d,1) == 0.5:1.0:2.5
+    @test dimvals(d,2) == 1.5:0.5:3.0
+end
+
 @testset "NamedDims" begin
     using NamedDims: NamedDimsArray
     d = yaxconvert(NamedDimsArray,M())
@@ -48,7 +57,7 @@ end
 end
 
 @testset "ArchGDAL" begin
-  p = download("https://download.osgeo.org/geotiff/samples/gdal_eg/cea.tif")
+  p = Downloads.download("https://download.osgeo.org/geotiff/samples/gdal_eg/cea.tif")
   using ArchGDAL
   AG=ArchGDAL
   r = AG.readraster(p)
