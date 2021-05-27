@@ -1,6 +1,7 @@
 using YAXArrayBase, NetCDF, Zarr, Test
 
 @testset "Reading NetCDF" begin
+import Downloads
 p = Downloads.download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc")
 
 p2 = mv(p,string(tempname(),".nc"))

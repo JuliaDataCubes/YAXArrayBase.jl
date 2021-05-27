@@ -57,6 +57,7 @@ end
 end
 
 @testset "ArchGDAL" begin
+  import Downloads
   p = Downloads.download("https://download.osgeo.org/geotiff/samples/gdal_eg/cea.tif")
   using ArchGDAL
   AG=ArchGDAL
