@@ -30,8 +30,14 @@ function dimvals(a::RasterDataset, i)
     end
 end
 iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
-getattributes(a::RasterDataset) =
-  Dict{String,Any}("projection"=>ArchGDAL.toPROJ4(ArchGDAL.newspatialref(ArchGDAL.getproj(a))))
+function getattributes(a::RasterDataset)
+    globatts = Dict{String,Any}("projection"=>ArchGDAL.toPROJ4(ArchGDAL.newspatialref(ArchGDAL.getproj(a))))
+    bands = (getbandattributes(ArchGDAL.getband(a, i)) for i in 1:size(a, 3))
+    allbands = mergewith(bands...) do a1,a2
+        isequal(a1,a2) ? a1 : missing
+    end
+    merge(globatts, allbands)
+end
 
 
 function dimname(::AbstractRasterBand, i)
@@ -54,5 +60,26 @@ function dimvals(b::AbstractRasterBand, i)
     end
 end
 iscontdim(a::AbstractRasterBand, i) = true
-getattributes(a::AbstractRasterBand) =
-  getattributes(ArchGDAL.RasterDataset(ArchGDAL.getdataset(a)))
+function getattributes(a::AbstractRasterBand)
+  atts = getattributes(ArchGDAL.RasterDataset(ArchGDAL.getdataset(a)))
+  bandatts = getbandattributes(a)
+  merge(atts, bandatts)
+end
+
+function getbandattributes(a::AbstractRasterBand)
+  atts = Dict{String,Any}()
+  offs = ArchGDAL.getoffset(a)
+  sf = ArchGDAL.getscale(a)
+  missval = ArchGDAL.getnodatavalue(a)
+  if !iszero(offs)
+    atts["add_offset"] = offs
+  end
+  if sf != one(sf)
+    atts["scale_factor"] = sf
+  end
+  T = eltype(a)
+  if missval !== nothing
+    atts["missing_value"] = missval
+  end
+  atts
+end
