@@ -1,6 +1,8 @@
 import .ArchGDAL: RasterDataset, AbstractRasterBand,
   getgeotransform, width, height, getname, getcolorinterp,
   getband, nraster, getdataset
+const AG = ArchGDAL
+
 function dimname(a::RasterDataset, i)
     if i == 1
         return :Y
@@ -66,20 +68,17 @@ function getattributes(a::AbstractRasterBand)
   merge(atts, bandatts)
 end
 
+function insertattifnot!(attrs, val, name, condition)
+    if !condition(val)
+        attrs[name] = val
+    end
+end
 function getbandattributes(a::AbstractRasterBand)
   atts = Dict{String,Any}()
-  offs = ArchGDAL.getoffset(a)
-  sf = ArchGDAL.getscale(a)
-  missval = ArchGDAL.getnodatavalue(a)
-  if !iszero(offs)
-    atts["add_offset"] = offs
-  end
-  if sf != one(sf)
-    atts["scale_factor"] = sf
-  end
-  T = eltype(a)
-  if missval !== nothing
-    atts["missing_value"] = missval
-  end
+  insertattifnot!(atts, AG.getnodatavalue(a), "missing_value", isnothing)
+  insertattifnot!(atts, AG.getcategorynames(a), "Categories", isempty)
+  insertattifnot!(atts, AG.GDAL.gdalgetrasterunittype(a.ptr), "Units", isempty)
+  insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
+  insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
   atts
 end

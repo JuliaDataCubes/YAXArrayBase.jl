@@ -41,11 +41,26 @@ Returns true if Union{T,Missing} is an allowed data type for the backend
 and if an array containing missings can be written to the array.
 """
 allow_missings(ds) = true
+
 #Fallback for writing array
 function add_var(ds,x::AbstractArray,name,dimlist,atts;kwargs...)
   a = add_var(ds,eltype(x),name,size(x),dimlist,atts;kwargs...)
   a .= x
   a
+end
+
+function create_dataset(T::Type, path, dimnames, dimvals, dimattrs, vartypes, varnames, vardims, varattrs, varchunks, kwargs)
+  ds = create_empty(T, path)
+  axlengths = Dict{String, Int}()
+  for (dname, dval, dattr) in zip(dimnames, dimvals, dimattrs)
+    add_var(ds, dval, dname, (dname,), dattr)
+    axlengths[dname] = length(dval)
+  end
+  for (T, vn, vd, va, vc) in zip(vartypes, varnames, vardims, varattrs, varchunks)
+    s = getindex.(Ref(axlengths),vd) 
+    add_var(ds, T, vn, s, vd, va; chunksize = vc, kwargs...)
+  end
+  ds
 end
 
 using DataStructures: OrderedDict

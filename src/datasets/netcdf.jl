@@ -56,8 +56,10 @@ function create_empty(::Type{NetCDFDataset}, path)
   NetCDFDataset(path)
 end
 
+allow_parallel_write(::Type{<:NetCDFDataset}) = false
 allow_parallel_write(::NetCDFDataset) = false
 
+allow_missings(::Type{<:NetCDFDataset}) = false
 allow_missings(::NetCDFDataset) = false
 
 backendlist[:netcdf] = NetCDFDataset
