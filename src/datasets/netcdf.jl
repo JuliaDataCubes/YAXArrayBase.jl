@@ -38,6 +38,7 @@ Base.size(v::NetCDFVariable) = v.size
 get_var_dims(ds::NetCDFDataset,name) = NetCDF.open(v->map(i->i.name,v[name].dim),ds.filename)
 get_varnames(ds::NetCDFDataset) = NetCDF.open(v->collect(keys(v.vars)),ds.filename)
 get_var_attrs(ds::NetCDFDataset, name) = NetCDF.open(v->v[name].atts,ds.filename)
+get_global_attrs(ds::NetCDFDataset) = NetCDF.open(nc->nc.gatts, ds.filename)
 function Base.getindex(ds::NetCDFDataset, i)
   s,et = NetCDF.open(j->(size(j),eltype(j)),ds.filename,i)
   NetCDFVariable{et,length(s)}(ds.filename, i, s)
@@ -51,8 +52,8 @@ function add_var(p::NetCDFDataset, T::Type, varname, s, dimnames, attr;
   NetCDFVariable{T,length(s)}(p.filename,varname,(s...,))
 end
 
-function create_empty(::Type{NetCDFDataset}, path)
-  NetCDF.create(_->nothing, path, NcVar[])
+function create_empty(::Type{NetCDFDataset}, path, gatts)
+  NetCDF.create(_->nothing, path, NcVar[], gatts = gatts)
   NetCDFDataset(path)
 end
 

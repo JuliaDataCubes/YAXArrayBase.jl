@@ -1,7 +1,6 @@
 import .ArchGDAL: RasterDataset, AbstractRasterBand,
   getgeotransform, width, height, getname, getcolorinterp,
   getband, nraster, getdataset
-const AG = ArchGDAL
 
 function dimname(a::RasterDataset, i)
     if i == 1
@@ -33,7 +32,10 @@ function dimvals(a::RasterDataset, i)
 end
 iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
 function getattributes(a::RasterDataset)
-    globatts = Dict{String,Any}("projection"=>ArchGDAL.toPROJ4(ArchGDAL.newspatialref(ArchGDAL.getproj(a))))
+    globatts = Dict{String,Any}(
+        "projection_PROJ4"=>ArchGDAL.toPROJ4(ArchGDAL.newspatialref(ArchGDAL.getproj(a))),
+        "projection_WKT"=>ArchGDAL.toWKT(ArchGDAL.newspatialref(ArchGDAL.getproj(a))),
+    )
     bands = (getbandattributes(ArchGDAL.getband(a, i)) for i in 1:size(a, 3))
     allbands = mergewith(bands...) do a1,a2
         isequal(a1,a2) ? a1 : missing
@@ -75,9 +77,10 @@ function insertattifnot!(attrs, val, name, condition)
 end
 function getbandattributes(a::AbstractRasterBand)
   atts = Dict{String,Any}()
+  catdict = Dict((i-1)=>v for (i,v) in enumerate(AG.getcategorynames(a)))
   insertattifnot!(atts, AG.getnodatavalue(a), "missing_value", isnothing)
-  insertattifnot!(atts, AG.getcategorynames(a), "Categories", isempty)
-  insertattifnot!(atts, AG.GDAL.gdalgetrasterunittype(a.ptr), "Units", isempty)
+  insertattifnot!(atts, catdict, "labels", isempty)
+  insertattifnot!(atts, AG.getunittype(a), "units", isempty)
   insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
   insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
   atts
