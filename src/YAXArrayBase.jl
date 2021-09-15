@@ -31,9 +31,10 @@ function __init__()
 
   @require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" include("axisarrays/axisindices.jl")
 
-  @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" include("axisarrays/archgdal.jl")
-      
-  @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" include("datasets/archgdal.jl")
+  @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" begin 
+    include("axisarrays/archgdal.jl")
+    include("datasets/archgdal.jl")
+  end
 
 
   @require Zarr="0a941bbe-ad1d-11e8-39d9-ab76183a1d99" include("datasets/zarr.jl")

@@ -48,7 +48,10 @@ function GDALDataset(filename)
         allbands = map(1:nb) do iband
             b = AG.getband(r, iband)
             gb = GDALBand(b, filename, iband)
-            name = AG.getname(AG.getcolorinterp(b))
+            name = AG.GDAL.gdalgetdescription(b.ptr)
+            if isempty(name)
+                name = AG.getname(AG.getcolorinterp(b))
+            end
             name => gb
         end
         proj = AG.getproj(r)
@@ -76,7 +79,17 @@ end
 
 get_varnames(ds::GDALDataset) = collect(keys(ds.bands))
 
-get_var_dims(ds::GDALDataset, _) = ("X", "Y")
+function get_var_dims(ds::GDALDataset, d) 
+    if d === "X"
+        return ("X",)
+    elseif d==="Y"
+        return ("Y",)
+    else
+        return ("X", "Y")
+    end
+end
+
+get_global_attrs(ds::GDALDataset) = Dict("projection"=>ds.projection)
 
 function get_var_attrs(ds::GDALDataset, name)
     if name in ("Y", "X")
@@ -96,7 +109,7 @@ isy(s) = uppercase(s) == "Y"
 function totransform(x, y)
     xstep = diff(x)
     ystep = diff(y)
-    if !all(isapprox(first(xstep)), xstep) && !all(isapprox(first(ystep)), ystep)
+    if !all(isapprox(first(xstep)), xstep) || !all(isapprox(first(ystep)), ystep)
         throw(ArgumentError("Grid must have regular spacing"))
     end
     Float64[first(x), first(xstep), 0.0, first(y), 0.0, first(ystep)]
@@ -173,6 +186,7 @@ function create_dataset(
             else
                 AG.setcolorinterp!(b, AG.GDAL.GDALColorInterp(icol - 1))
             end
+            AG.GDAL.gdalsetdescription(b.ptr, varnames[i])
             atts = varattrs[i]
             haskey(atts, "missing_value") && AG.setnodatavalue!(b, atts["missing_value"])
             if haskey(atts, "labels")

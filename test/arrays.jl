@@ -74,7 +74,7 @@ end
   @test YAXArrayBase.iscontdim(r,1) == true
   @test YAXArrayBase.iscontdim(r,2) == true
   @test YAXArrayBase.iscontdim(r,3) == true
-  @test YAXArrayBase.getattributes(r)["projection"] == "+proj=cea +lat_ts=33.75 +lon_0=-117.333333333333 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs"
+  @test YAXArrayBase.getattributes(r)["projection_PROJ4"] == "+proj=cea +lat_ts=33.75 +lon_0=-117.333333333333 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs"
   b = AG.getband(r,1)
   @test YAXArrayBase.dimnames(b) == (:Y, :X)
   @test YAXArrayBase.dimname(b,1) == :Y
@@ -85,5 +85,5 @@ end
   @test_throws Exception YAXArrayBase.dimvals(b,3)
   @test YAXArrayBase.iscontdim(b,1) == true
   @test YAXArrayBase.iscontdim(b,2) == true
-  @test YAXArrayBase.getattributes(b)["projection"] == "+proj=cea +lat_ts=33.75 +lon_0=-117.333333333333 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs"
+  @test YAXArrayBase.getattributes(b)["projection_PROJ4"] == "+proj=cea +lat_ts=33.75 +lon_0=-117.333333333333 +x_0=0 +y_0=0 +datum=NAD27 +units=m +no_defs"
 end
