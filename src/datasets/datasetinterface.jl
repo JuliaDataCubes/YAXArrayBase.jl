@@ -16,8 +16,7 @@ function get_global_attrs(ds) end
 
 #Functions to be implemented for Dataset sinks
 "Initialize and return a handle to a new empty dataset"
-create_empty(T::Type,path) =
-  error("create_empty not implemented for $T")
+function create_empty(T::Type,path,gatts) end
 
 """
     add_var(ds, T, name, s, dimlist, atts)

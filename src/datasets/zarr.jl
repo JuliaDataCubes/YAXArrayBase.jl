@@ -34,7 +34,7 @@ function add_var(p::ZarrDataset, a::AbstractArray, varname, dimnames, attr;
   a
 end
 
-create_empty(::Type{ZarrDataset}, path, gatts) = ZarrDataset(zgroup(path, attrs=gatts))
+create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(path, attrs=gatts))
 
 backendlist[:zarr] = ZarrDataset
 push!(backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
