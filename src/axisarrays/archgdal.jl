@@ -1,6 +1,7 @@
 import .ArchGDAL: RasterDataset, AbstractRasterBand,
   getgeotransform, width, height, getname, getcolorinterp,
   getband, nraster, getdataset
+
 function dimname(a::RasterDataset, i)
     if i == 1
         return :Y
@@ -30,8 +31,17 @@ function dimvals(a::RasterDataset, i)
     end
 end
 iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
-getattributes(a::RasterDataset) =
-  Dict{String,Any}("projection"=>ArchGDAL.toPROJ4(ArchGDAL.newspatialref(ArchGDAL.getproj(a))))
+function getattributes(a::RasterDataset)
+    globatts = Dict{String,Any}(
+        "projection_PROJ4"=>ArchGDAL.toPROJ4(ArchGDAL.newspatialref(ArchGDAL.getproj(a))),
+        "projection_WKT"=>ArchGDAL.toWKT(ArchGDAL.newspatialref(ArchGDAL.getproj(a))),
+    )
+    bands = (getbandattributes(ArchGDAL.getband(a, i)) for i in 1:size(a, 3))
+    allbands = mergewith(bands...) do a1,a2
+        isequal(a1,a2) ? a1 : missing
+    end
+    merge(globatts, allbands)
+end
 
 
 function dimname(::AbstractRasterBand, i)
@@ -54,5 +64,24 @@ function dimvals(b::AbstractRasterBand, i)
     end
 end
 iscontdim(a::AbstractRasterBand, i) = true
-getattributes(a::AbstractRasterBand) =
-  getattributes(ArchGDAL.RasterDataset(ArchGDAL.getdataset(a)))
+function getattributes(a::AbstractRasterBand)
+  atts = getattributes(ArchGDAL.RasterDataset(ArchGDAL.getdataset(a)))
+  bandatts = getbandattributes(a)
+  merge(atts, bandatts)
+end
+
+function insertattifnot!(attrs, val, name, condition)
+    if !condition(val)
+        attrs[name] = val
+    end
+end
+function getbandattributes(a::AbstractRasterBand)
+  atts = Dict{String,Any}()
+  catdict = Dict((i-1)=>v for (i,v) in enumerate(AG.getcategorynames(a)))
+  insertattifnot!(atts, AG.getnodatavalue(a), "missing_value", isnothing)
+  insertattifnot!(atts, catdict, "labels", isempty)
+  insertattifnot!(atts, AG.getunittype(a), "units", isempty)
+  insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
+  insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
+  atts
+end

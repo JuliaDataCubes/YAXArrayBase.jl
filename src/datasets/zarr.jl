@@ -9,6 +9,7 @@ ZarrDataset(g::String) = ZarrDataset(zopen(g))
 get_var_dims(ds::ZarrDataset,name) = reverse(ds[name].attrs["_ARRAY_DIMENSIONS"])
 get_varnames(ds::ZarrDataset) = collect(keys(ds.g.arrays))
 get_var_attrs(ds::ZarrDataset, name) = ds[name].attrs
+get_global_attrs(ds::ZarrDataset) = ds.g.attrs
 Base.getindex(ds::ZarrDataset, i) = ds.g[i]
 Base.haskey(ds::ZarrDataset,k) = haskey(ds.g,k)
 
@@ -33,7 +34,7 @@ function add_var(p::ZarrDataset, a::AbstractArray, varname, dimnames, attr;
   a
 end
 
-create_empty(::Type{ZarrDataset}, path) = ZarrDataset(zgroup(path))
+create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(path, attrs=gatts))
 
 backendlist[:zarr] = ZarrDataset
 push!(backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
