@@ -99,7 +99,7 @@ function get_var_attrs(ds::GDALDataset, name)
     end
 end
 
-const colornames = AG.getname.(AG.GDAL.GDALColorInterp.(0:16))
+const colornames = AG.getname.(AG.GDALColorInterp.(0:16))
 
 islat(s) = startswith(uppercase(s), "LAT")
 islon(s) = startswith(uppercase(s), "LON")
