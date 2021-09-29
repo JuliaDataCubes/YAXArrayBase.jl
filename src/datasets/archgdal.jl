@@ -95,7 +95,7 @@ function get_var_attrs(ds::GDALDataset, name)
     if name in ("Y", "X")
         Dict{String,Any}()
     else
-        ds.bands[name].attrs
+        merge(ds.bands[name].attrs,get_global_attrs(ds))
     end
 end
 
@@ -118,11 +118,11 @@ totransform(x::AbstractRange, y::AbstractRange) =
     Float64[first(x), step(x), 0.0, first(y), 0.0, step(y)]
 getproj(userproj::String, attrs) = AG.importPROJ4(userproj)
 getproj(userproj::AG.AbstractSpatialRef, attrs) = userproj
-function getproj(userproj::Nothing, attrs)
-    if haskey(attr, "projection_PROJ4")
-        return AG.importPROJ4(attr["projection_PROJ4"])
-    elseif haskey(attr, "projection_WKT")
-        return AG.importWKT(attr["projection_WKT"])
+function getproj(::Nothing, attrs)
+    if haskey(attrs, "projection_PROJ4")
+        return AG.importPROJ4(attrs["projection_PROJ4"])
+    elseif haskey(attrs, "projection_WKT")
+        return AG.importWKT(attrs["projection_WKT"])
     else
         error(
             "Could not determine output projection from attributes, please specify userproj",
@@ -154,7 +154,7 @@ function create_dataset(
         proj, trans
     elseif isx(dimnames[1]) && isy(dimnames[2])
         #Try to find out srs
-        proj = getproj(userproj, gatts)
+        proj = getproj(userproj, merge(gatts,varattrs...))
         trans = totransform(dimvals[1], dimvals[2])
         proj, trans
     else

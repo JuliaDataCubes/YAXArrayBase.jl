@@ -3,20 +3,20 @@
 get_var_handle(ds, name) = ds[name]
 
 "Return a list of variable names"
-function get_varnames(ds) end
+function get_varnames end
 
 "Return a list of dimension names for a given variable"
-function get_var_dims(ds, name) end
+function get_var_dims end
 
 "Return a dict with the attributes for a given variable"
-function get_var_attrs(ds,name) end
+function get_var_attrs end
 
 "Return a dict with global attributes for the dataset"
-function get_global_attrs(ds) end
+function get_global_attrs end
 
 #Functions to be implemented for Dataset sinks
 "Initialize and return a handle to a new empty dataset"
-function create_empty(T::Type,path,gatts) end
+function create_empty end
 
 """
     add_var(ds, T, name, s, dimlist, atts)
@@ -25,7 +25,7 @@ Add a new variable to the dataset with element type `T`,
 name `name`, size `s` and depending on the dimensions `dimlist`
 given by a list of Strings. `atts` is a Dict with attributes.
 """
-function add_var(ds, T, name, s, dimlist, atts;kwargs...) end
+function add_var end
 
 """
     allow_parallel_write(ds)
