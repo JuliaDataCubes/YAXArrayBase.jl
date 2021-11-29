@@ -1,5 +1,5 @@
 using .Zarr: ZArray, ZGroup, zgroup, zcreate,
-to_zarrtype, zopen
+to_zarrtype, zopen, Compressor
 
 struct ZarrDataset
   g::ZGroup
@@ -42,3 +42,4 @@ push!(backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
 allow_parallel_write(::ZarrDataset) = true
 allow_missings(::ZarrDataset) = true
 to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g)
+iscompressed(a::ZArray{<:Any,<:Any,<:Compressor}) = true

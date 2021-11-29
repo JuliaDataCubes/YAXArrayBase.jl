@@ -16,6 +16,7 @@ vn = get_varnames(ds_nc)
 @test get_var_dims(ds_nc, "time_bnds") == ["bnds", "time"]
 @test get_var_attrs(ds_nc,"tas")["long_name"] == "air_temperature"
 h = get_var_handle(ds_nc, "tas")
+@test !YAXArrayBase.iscompressed(h)
 @test all(isapprox.(h[1:2,1:2], [215.893 217.168; 215.805 217.03]))
 @test allow_parallel_write(ds_nc) == false
 @test allow_missings(ds_nc) == false
@@ -31,6 +32,7 @@ vn = get_varnames(ds_zarr)
 @test get_var_dims(ds_zarr, "time_bnds") == ["bnds", "time"]
 @test get_var_attrs(ds_zarr,"psl")["long_name"] == "Sea Level Pressure"
 h = get_var_handle(ds_zarr, "psl")
+@test YAXArrayBase.iscompressed(h)
 @test all(isapprox.(h[1:2,1:2,1], [99360.8  99334.9; 99360.8  99335.4]))
 @test allow_parallel_write(ds_zarr) == true
 @test allow_missings(ds_zarr) == true

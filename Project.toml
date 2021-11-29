@@ -1,7 +1,7 @@
 name = "YAXArrayBase"
 uuid = "90b8fcef-0c2d-428d-9c56-5f86629e9d14"
 authors = ["Fabian Gans <fgans@bgc-jena.mpg.de>"]
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
