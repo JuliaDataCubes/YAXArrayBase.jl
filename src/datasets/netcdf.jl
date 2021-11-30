@@ -32,6 +32,7 @@ end
 end
 writeblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...) = NetCDF.open(a->writeblock!(a,aout,r...), v.filename, v.varname, mode=NC_WRITE)
 readblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...) = NetCDF.open(a->readblock!(a,aout,r...), v.filename, v.varname)
+iscompressed(v::NetCDFVariable) = NetCDF.open(v->v.compress > 0, v.filename, v.varname)
 
 Base.size(v::NetCDFVariable) = v.size
 
