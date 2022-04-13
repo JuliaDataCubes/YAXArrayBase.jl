@@ -20,8 +20,8 @@ end
 
 function add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, kwargs...)
-  attr["_ARRAY_DIMENSIONS"]=reverse(collect(dimnames))
-  za = zcreate(T, p.g, varname, s...;attrs=attr,chunks=chunksize,kwargs...)
+  attr2 = merge(attr,Dict("_ARRAY_DIMENSIONS"=>reverse(collect(dimnames))))
+  za = zcreate(T, p.g, varname, s...;attrs=attr2,chunks=chunksize,kwargs...)
   za
 end
 
