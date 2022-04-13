@@ -41,8 +41,8 @@ end
 function test_write(T)
     p = tempname()
     ds = create_empty(T, p)
-add_var(ds, 0.5:1:9.5, "lon", ("lon",), Dict{String,Any}("units"=>"degrees_east"))
-add_var(ds, 20:-1.0:1, "lat", ("lat",), Dict{String,Any}("units"=>"degrees_north"))
+add_var(ds, 0.5:1:9.5, "lon", ("lon",), Dict("units"=>"degrees_east"))
+add_var(ds, 20:-1.0:1, "lat", ("lat",), Dict("units"=>"degrees_north"))
 v = add_var(ds, Float32, "tas", (10,20), ("lon", "lat"), Dict{String,Any}("units"=>"Celsius"))
 
 v[:,:] = collect(reshape(1:200, 10, 20))
