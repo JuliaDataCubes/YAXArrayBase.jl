@@ -42,7 +42,7 @@ struct GDALDataset
     bands::OrderedDict{String}
 end
 
-function GDALDataset(filename)
+function GDALDataset(filename;mode="r")
     AG.read(filename) do r
         nb = AG.nraster(r)
         allbands = map(1:nb) do iband

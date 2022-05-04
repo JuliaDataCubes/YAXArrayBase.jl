@@ -14,7 +14,7 @@ struct NetCDFDataset
   filename::String
   mode::UInt16
 end
-NetCDFDataset(filename) = NetCDFDataset(filename,NC_NOWRITE)
+NetCDFDataset(filename;mode="r") = mode == "r" ? NetCDFDataset(filename,NC_NOWRITE) : NetCDFDataset(filename,NC_WRITE)
 
 import .NetCDF: AbstractDiskArray, readblock!, writeblock!, haschunks, eachchunk
 
