@@ -24,7 +24,7 @@ end
 
 @testset "Reading Zarr" begin
 p = "gs://cmip6/CMIP6/HighResMIP/CMCC/CMCC-CM2-HR4/highresSST-present/r1i1p1f1/6hrPlev/psl/gn/v20170706/"
-ds_zarr = to_dataset(p)
+ds_zarr = to_dataset(p,driver=:zarr)
 vn = get_varnames(ds_zarr)
 @test sort(vn) == ["lat", "lat_bnds", "lon", "lon_bnds", "psl", "time", "time_bnds"]
 @test get_var_dims(ds_zarr, "psl") == ["lon", "lat", "time"]
