@@ -76,17 +76,20 @@ backendlist = OrderedDict{Symbol, Any}(
 
 backendregex = Pair[]
 
-function to_dataset(g::String; driver=:all)
+function backendfrompath(g::String; driver = :all)
   if driver == :all
     for p in YAXArrayBase.backendregex
       if match(p[1],g) !== nothing
-        return to_dataset(p[2],g)
+        return p[2]
       end
     end
-    return to_dataset(g,driver=:zarr)
+    return last(first(backendregex))
   else
-    return to_dataset(backendlist[driver],g)
+    return backendlist[driver]
   end
 end
+
+to_dataset(g::String; driver=:all, kwargs...) = to_dataset(backendfrompath(g;driver),g,kwargs...)
+
 to_dataset(g; kwargs...) = g
-to_dataset(T::Type{<:Any}, g::String) = T(g)
+to_dataset(T::Type{<:Any}, g::String;kwargs...) = T(g;kwargs...)

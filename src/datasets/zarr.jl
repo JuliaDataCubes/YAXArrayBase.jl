@@ -4,7 +4,7 @@ to_zarrtype, zopen, Compressor
 struct ZarrDataset
   g::ZGroup
 end
-ZarrDataset(g::String) = ZarrDataset(zopen(g))
+ZarrDataset(g::String;mode="r") = ZarrDataset(zopen(g,mode,fill_as_missing=true))
 
 get_var_dims(ds::ZarrDataset,name) = reverse(ds[name].attrs["_ARRAY_DIMENSIONS"])
 get_varnames(ds::ZarrDataset) = collect(keys(ds.g.arrays))
@@ -21,7 +21,7 @@ end
 function add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, kwargs...)
   attr2 = merge(attr,Dict("_ARRAY_DIMENSIONS"=>reverse(collect(dimnames))))
-  za = zcreate(T, p.g, varname, s...;attrs=attr2,chunks=chunksize,kwargs...)
+  za = zcreate(T, p.g, varname,s...;fill_as_missing=true,attrs=attr2,chunks=chunksize,kwargs...)
   za
 end
 
