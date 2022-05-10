@@ -5,8 +5,8 @@
 ![Lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
 ![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
 ![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
-[![Build Status](https://travis-ci.com/meggart/YAXArrayBase.jl.svg?branch=master)](https://travis-ci.com/meggart/YAXArrayBase.jl)
-[![codecov.io](http://codecov.io/github/meggart/YAXArrayBase.jl/coverage.svg?branch=master)](http://codecov.io/github/meggart/YAXArrayBase.jl?branch=master)
+[![Build Status](https://travis-ci.com/JuliaDataCubes/YAXArrayBase.jl.svg?branch=master)](https://travis-ci.com/JuliaDataCubes/YAXArrayBase.jl)
+[![codecov.io](http://codecov.io/github/JuliaDataCubes/YAXArrayBase.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaDataCubes/YAXArrayBase.jl?branch=master)
 
 # YAXArrayBase
 
