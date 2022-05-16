@@ -18,6 +18,17 @@ YAXArrayBase.getattributes(::M) = Dict{String,Any}("a1"=>5, "a2"=>"att")
     @test dimvals(d,2) == 1.5:0.5:3.0
 end
 
+@testset "AxisKeys" begin
+    using AxisKeys: KeyedArray
+    d = yaxconvert(KeyedArray,M())
+    @test d isa KeyedArray
+    @test getdata(d) == reshape(1:12,3,4)
+    @test YAXArrayBase.dimnames(d) == (:x, :y)
+    @test dimvals(d,1) == 0.5:1.0:2.5
+    @test dimvals(d,2) == 1.5:0.5:3.0
+end
+
+
 @testset "AxisArrays" begin
     using AxisArrays: AxisArrays
     d = yaxconvert(AxisArrays.AxisArray,M())

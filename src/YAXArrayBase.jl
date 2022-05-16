@@ -31,6 +31,8 @@ function __init__()
 
   @require AxisIndices="f52c9ee2-1b1c-4fd8-8546-6350938c7f11" include("axisarrays/axisindices.jl")
 
+  @require AxisKeys="94b1ba4f-4ee9-5380-92f1-94cde586c3c5" include("axisarrays/axiskeys.jl")
+
   @require ArchGDAL="c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3" begin 
     include("axisarrays/archgdal.jl")
     include("datasets/archgdal.jl")
