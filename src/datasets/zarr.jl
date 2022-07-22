@@ -28,11 +28,8 @@ Base.haskey(ds::ZarrDataset,k) = haskey(ds.g,k)
 
 function add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, fill_as_missing=false, kwargs...)
-  default_fillvalue(T) = T<:AbstractFloat ? T(NaN) : typemax(T)
   attr2 = merge(attr,Dict("_ARRAY_DIMENSIONS"=>reverse(collect(dimnames))))
-  fv = get(attr,"_FillValue",get(attr,"missing_value",default_fillvalue(T)))
-  delete!(attr2,"_FillValue")
-  delete!(attr2,"missing_value")
+  fv = get(attr,"_FillValue",get(attr,"missing_value",defaultfillval(T)))
   za = zcreate(T, p.g, varname,s...;fill_value = fv,fill_as_missing,attrs=attr2,chunks=chunksize,kwargs...)
   za
 end
