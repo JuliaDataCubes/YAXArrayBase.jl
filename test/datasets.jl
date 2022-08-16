@@ -35,7 +35,7 @@ h = get_var_handle(ds_zarr, "psl")
 @test YAXArrayBase.iscompressed(h)
 @test all(isapprox.(h[1:2,1:2,1], [99360.8  99334.9; 99360.8  99335.4]))
 @test allow_parallel_write(ds_zarr) == true
-@test allow_missings(ds_zarr) == true
+@test allow_missings(ds_zarr) == false
 end
 
 function test_write(T)
