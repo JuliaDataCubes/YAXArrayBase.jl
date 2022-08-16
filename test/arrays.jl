@@ -58,8 +58,8 @@ end
 
 @testset "DimensionalData" begin
     using DimensionalData
-    d = yaxconvert(DimensionalArray,M())
-    @test d isa DimensionalArray
+    d = yaxconvert(DimArray,M())
+    @test d isa DimArray
     @test getdata(d) == reshape(1:12,3,4)
     @test YAXArrayBase.dimnames(d) == (:x, :y)
     @test dimvals(d,1) == 0.5:1.0:2.5
