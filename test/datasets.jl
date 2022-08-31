@@ -1,4 +1,9 @@
-using YAXArrayBase, NetCDF, Zarr, Test
+using YAXArrayBase, Test
+@testset "Empty Backend" begin
+  @test_throws "No backend found." YAXArrayBase.backendfrompath("test.zarr")
+end
+
+using NetCDF, Zarr
 
 @testset "Reading NetCDF" begin
 import Downloads

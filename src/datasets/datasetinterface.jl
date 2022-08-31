@@ -78,6 +78,7 @@ backendregex = Pair[]
 
 function backendfrompath(g::String; driver = :all)
   if driver == :all
+    isempty(backendregex) && throw("No backend found. Load a backend by using the corresponding package.")
     for p in YAXArrayBase.backendregex
       if match(p[1],g) !== nothing
         return p[2]
