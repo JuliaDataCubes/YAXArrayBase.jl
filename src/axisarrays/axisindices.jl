@@ -1,4 +1,4 @@
-using .AxisIndices: AbstractAxis,AxisIndices
+using .AxisIndices: AbstractAxis,AxisIndicesArray
 
 valfromaxis(ax::AbstractAxis) = keys(ax)
 

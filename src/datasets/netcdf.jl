@@ -35,7 +35,7 @@ function check_contig(x)
 end
 writeblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...) = NetCDF.open(a->writeblock!(a,aout,r...), v.filename, v.varname, mode=NC_WRITE)
 function readblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...) 
-  if check_contig
+  if check_contig(aout)
     NetCDF.open(a->readblock!(a,aout,r...), v.filename, v.varname)
   else
     aouttemp = Array(aout)
