@@ -1,6 +1,7 @@
 using .DimensionalData: DimArray, DimensionalData, data, Dim, metadata
 
 _dname(::DimensionalData.Dim{N}) where N = N
+_dname()
 dimname(x::DimArray, i) = _dname(DimensionalData.dims(x)[i])
 
 
