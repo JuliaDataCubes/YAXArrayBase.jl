@@ -5,11 +5,24 @@ end
 
 using NetCDF, Zarr
 
-@testset "Reading NetCDF" begin
+using Pkg.Artifacts
 import Downloads
-p = Downloads.download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc")
+# This is the path to the Artifacts.toml we will manipulate
+artifact_toml =  joinpath(@__DIR__,"Artifacts.toml")
+ncar_hash = artifact_hash("ncar", artifact_toml)
+if ncar_hash == nothing || !artifact_exists(ncar_hash)
+  oldhash = ncar_hash
+  ncar_hash = create_artifact() do artifact_dir     
+    Downloads.download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc",joinpath(artifact_dir,"ncar.nc"))
+  end
+  if oldhash !== nothing
+    unbind_artifact!(artifact_toml, "ncar")
+  end
+  bind_artifact!(artifact_toml, "ncar", ncar_hash)
+end
+p2 = joinpath(artifact_path(ncar_hash),"ncar.nc")
 
-p2 = mv(p,string(tempname(),".nc"))
+@testset "Reading NetCDF" begin
 
 ds_nc = YAXArrayBase.to_dataset(p2)
 vn = get_varnames(ds_nc)

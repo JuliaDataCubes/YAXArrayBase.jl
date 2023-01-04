@@ -30,8 +30,19 @@ for m in [:haschunks, :eachchunk]
 end
 ))
 end
+function check_contig(x)
+   isa(x,Array) || (isa(x,SubArray) && Base.iscontiguous(x))
+end
 writeblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...) = NetCDF.open(a->writeblock!(a,aout,r...), v.filename, v.varname, mode=NC_WRITE)
-readblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...) = NetCDF.open(a->readblock!(a,aout,r...), v.filename, v.varname)
+function readblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...) 
+  if check_contig(aout)
+    NetCDF.open(a->readblock!(a,aout,r...), v.filename, v.varname)
+  else
+    aouttemp = Array(aout)
+    NetCDF.open(a->readblock!(a,aouttemp,r...), v.filename, v.varname)
+    aout .= aouttemp
+  end
+end
 iscompressed(v::NetCDFVariable) = NetCDF.open(v->v.compress > 0, v.filename, v.varname)
 
 Base.size(v::NetCDFVariable) = v.size
