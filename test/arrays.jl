@@ -10,8 +10,8 @@ YAXArrayBase.getattributes(::M) = Dict{String,Any}("a1"=>5, "a2"=>"att")
 
 @testset "AxisIndices" begin
     using AxisIndices: AxisIndices
-    d = yaxconvert(AxisIndices.AxisArray,M())
-    @test d isa AxisIndices.AxisArray
+    d = yaxconvert(AxisIndices.AxisIndicesArray,M())
+    @test d isa AxisIndices.AxisIndicesArray
     @test getdata(d) == reshape(1:12,3,4)
     @test YAXArrayBase.dimnames(d) == (:Dim_1, :Dim_2)
     @test dimvals(d,1) == 0.5:1.0:2.5
