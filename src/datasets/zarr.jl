@@ -1,5 +1,7 @@
-using .Zarr: ZArray, ZGroup, zgroup, zcreate,
+module ZarrDatasets
+using Zarr: ZArray, ZGroup, zgroup, zcreate,
 to_zarrtype, zopen, Compressor
+import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs, get_var_dims, get_global_attrs, create_dataset, add_var, create_empty, backendlist, backendregex
 
 struct ZarrDataset
   g::ZGroup
@@ -52,3 +54,4 @@ allow_parallel_write(::ZarrDataset) = true
 allow_missings(::ZarrDataset) = false
 to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g)
 iscompressed(a::ZArray{<:Any,<:Any,<:Compressor}) = true
+end

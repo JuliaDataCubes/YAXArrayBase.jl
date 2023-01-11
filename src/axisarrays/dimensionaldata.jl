@@ -1,4 +1,6 @@
-using .DimensionalData: DimArray, DimensionalData, data, Dim, metadata
+module DimensionalDataImpl
+import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate, valfromaxis
+using DimensionalData: DimArray, DimensionalData, data, Dim, metadata
 
 _dname(::DimensionalData.Dim{N}) where N = N
 _dname(d::DimensionalData.Dimension) = DimensionalData.name(d)
@@ -16,4 +18,5 @@ function yaxcreate(::Type{<:DimArray},data,dnames,dvals,atts)
     Dim{Symbol(dnames[i])}(dvals[i])
   end
   DimArray(data,d,metadata = atts)
+end
 end

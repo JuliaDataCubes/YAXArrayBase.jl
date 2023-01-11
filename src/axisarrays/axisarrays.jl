@@ -1,4 +1,6 @@
-using .AxisArrays: AxisArrays, AxisArray
+module AxisArraysImpl
+using AxisArrays: AxisArrays, AxisArray
+import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate
 
 dimname(a::AxisArray, i) = AxisArrays.axisnames(a)[i]
 dimnames(a::AxisArray) = AxisArrays.axisnames(a)
@@ -10,4 +12,5 @@ function yaxcreate(::Type{<:AxisArray}, data, dnames, dvals, atts)
     dnames[i] => dvals[i]
   end
   AxisArray(data; d...)
+end
 end
