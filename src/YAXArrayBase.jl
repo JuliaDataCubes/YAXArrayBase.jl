@@ -1,6 +1,8 @@
 module YAXArrayBase
-using Requires: @require
-using DataStructures: OrderedDict
+#if !isdefined(Base, :get_extension)
+#  using Requires
+#end
+  using DataStructures: OrderedDict
 
 include("datasets/datasetinterface.jl")
 include("axisarrays/axisinterface.jl")
@@ -22,7 +24,8 @@ function __init__()
   )
 
   backendregex = Pair[]
-
+  #=
+@static if !isdefined(Base, :get_extension)
   @require NamedDims="356022a1-0364-5f58-8944-0da4b18d706f" include("axisarrays/nameddims.jl")
 
   @require DimensionalData="0703355e-b756-11e9-17c0-8b28908087d0" include("axisarrays/dimensionaldata.jl")
@@ -43,7 +46,8 @@ function __init__()
 
   @require NetCDF="30363a11-5582-574a-97bb-aa9a979735b9" include("datasets/netcdf.jl")
 
-
+end
+=#
 
 
 end

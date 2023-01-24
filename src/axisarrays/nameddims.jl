@@ -1,4 +1,5 @@
-using .NamedDims: NamedDimsArray
+#isdefined(Base, :get_extension) ? (using NamedDims: NamedDimsArray) : (using ..NamedDims: NamedDimsArray)
+using NamedDims: NamedDimsArray
 dimname(a::NamedDimsArray{N},i) where N = N[i]
 dimnames(a::NamedDimsArray{N}) where N = N
 getdata(a::NamedDimsArray) = parent(a)
