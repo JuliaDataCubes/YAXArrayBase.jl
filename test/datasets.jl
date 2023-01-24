@@ -10,7 +10,7 @@ import Downloads
 # This is the path to the Artifacts.toml we will manipulate
 artifact_toml =  joinpath(@__DIR__,"Artifacts.toml")
 ncar_hash = artifact_hash("ncar", artifact_toml)
-if ncar_hash == nothing || !artifact_exists(ncar_hash)
+if ncar_hash === nothing || !artifact_exists(ncar_hash)
   oldhash = ncar_hash
   ncar_hash = create_artifact() do artifact_dir     
     Downloads.download("https://www.unidata.ucar.edu/software/netcdf/examples/sresa1b_ncar_ccsm3-example.nc",joinpath(artifact_dir,"ncar.nc"))
@@ -76,9 +76,9 @@ v = get_var_handle(ds, "tas")
 end
 
 @testset "Writing NetCDF" begin
-  test_write(YAXArrayBase.NetCDFDataset)
+  test_write(YAXArrayBase.NetCDFExt.NetCDFDataset)
 end
 
 @testset "Writing Zarr" begin
-  test_write(YAXArrayBase.ZarrDataset)
+  test_write(ZarrExt.ZarrDataset)
 end
