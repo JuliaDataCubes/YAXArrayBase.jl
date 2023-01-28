@@ -1,4 +1,3 @@
-#isdefined(Base, :get_extension) ? (using NamedDims: NamedDimsArray) : (using ..NamedDims: NamedDimsArray)
 module NamedDimsExt
 using NamedDims: NamedDimsArray
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate
