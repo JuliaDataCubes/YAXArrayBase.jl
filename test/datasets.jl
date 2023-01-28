@@ -76,9 +76,9 @@ v = get_var_handle(ds, "tas")
 end
 
 @testset "Writing NetCDF" begin
-  test_write(YAXArrayBase.NetCDFExt.NetCDFDataset)
+  test_write(YAXArrayBase.backendlist[:netcdf])
 end
 
 @testset "Writing Zarr" begin
-  test_write(ZarrExt.ZarrDataset)
+  test_write(YAXArrayBase.backendlist[:zarr])
 end
