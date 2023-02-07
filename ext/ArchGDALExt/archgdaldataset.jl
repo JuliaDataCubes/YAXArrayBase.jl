@@ -1,9 +1,3 @@
-import .ArchGDAL: RasterDataset, AbstractRasterBand,
-  getgeotransform, width, height, getname, getcolorinterp,
-  getband, nraster, getdataset, ArchGDAL
-using .ArchGDAL.DiskArrays: GridChunks, DiskArrays, eachchunk
-const AG = ArchGDAL
-
 struct GDALBand{T} <: AG.DiskArrays.AbstractDiskArray{T,2}
     filename::String
     band::Int
@@ -211,8 +205,10 @@ allow_parallel_write(::GDALDataset) = false
 allow_missings(::Type{<:GDALDataset}) = false
 allow_missings(::GDALDataset) = false
 
-backendlist[:gdal] = GDALDataset
-push!(backendregex,r".tif$"=>GDALDataset)
-push!(backendregex,r".gtif$"=>GDALDataset)
-push!(backendregex,r".tiff$"=>GDALDataset)
-push!(backendregex,r".gtiff$"=>GDALDataset)
+function __init__()
+    backendlist[:gdal] = GDALDataset
+    push!(backendregex,r".tif$"=>GDALDataset)
+    push!(backendregex,r".gtif$"=>GDALDataset)
+    push!(backendregex,r".tiff$"=>GDALDataset)
+    push!(backendregex,r".gtiff$"=>GDALDataset)
+end
