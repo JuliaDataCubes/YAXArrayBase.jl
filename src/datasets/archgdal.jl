@@ -19,13 +19,23 @@ end
 Base.size(b::GDALBand) = b.size
 DiskArrays.eachchunk(b::GDALBand) = b.cs
 DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
-function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
-    AG.read(b.filename) do ds
-        AG.getband(ds, b.band) do bh
-            DiskArrays.readblock!(bh, aout, r...)
+
+function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
+        AG.read(b.filename) do ds
+            AG.getband(ds, b.band) do bh
+                DiskArrays.readblock!(bh, aout, r...)
+            
         end
     end
-end
+ end
+
+ function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
+    aout2 = similar(aout)
+    DiskArrays.readblock!(b, aout2, r)
+    aout .= aout2
+ end
+
+
 function DiskArrays.writeblock!(b::GDALBand, ain, r::AbstractUnitRange...)
     AG.read(b.filename, flags=AG.OF_Update) do ds
         AG.getband(ds, b.band) do bh
