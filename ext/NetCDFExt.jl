@@ -1,4 +1,4 @@
-module NetCDFDatasets
+module NetCDFExt
 using NetCDF
 import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs, get_var_dims, get_global_attrs, create_dataset,add_var, create_empty, backendlist, backendregex
 

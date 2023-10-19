@@ -21,15 +21,14 @@ NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
 
 [extensions]
-ArchGDALArrays = "ArchGDAL"
-ArchGDALDatasets = "ArchGDAL"
-AxisArraysImpl = "AxisArrays"
-AxisIndicesImpl = "AxisIndices"
-AxisKeysImpl = "AxisKeys"
-DimensionalDataImpl = "DimensionalData"
-NamedDimsImpl = "NamedDims"
-NetCDFDatasets = "NetCDF"
-ZarrDatasets = "Zarr"
+ArchGDALExt = "ArchGDAL"
+AxisArraysExt = "AxisArrays"
+AxisIndicesExt = "AxisIndices"
+AxisKeysExt = "AxisKeys"
+DimensionalDataExt = "DimensionalData"
+NamedDimsExt = "NamedDims"
+NetCDFExt = "NetCDF"
+ZarrExt = "Zarr"
 
 [compat]
 DataStructures = "0.17, 0.18"

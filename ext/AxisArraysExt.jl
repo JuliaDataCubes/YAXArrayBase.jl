@@ -1,4 +1,4 @@
-module AxisArraysImpl
+module AxisArraysExt
 using AxisArrays: AxisArrays, AxisArray
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate
 

@@ -1,4 +1,4 @@
-module ZarrDatasets
+module ZarrExt
 using Zarr: ZArray, ZGroup, zgroup, zcreate,
 to_zarrtype, zopen, Compressor
 import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs, get_var_dims, get_global_attrs, create_dataset, add_var, create_empty, backendlist, backendregex
