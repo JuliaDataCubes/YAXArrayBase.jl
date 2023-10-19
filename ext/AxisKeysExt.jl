@@ -1,4 +1,4 @@
-module AxisKeysImpl
+module AxisKeysExt
 import AxisKeys
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate, valfromaxis
 

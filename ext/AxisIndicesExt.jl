@@ -1,4 +1,4 @@
-module AxisIndicesImpl
+module AxisIndicesExt
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate, valfromaxis
 using AxisIndices: AbstractAxis,AxisIndicesArray
 

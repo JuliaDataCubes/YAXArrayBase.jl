@@ -1,4 +1,4 @@
-module NamedDimsImpl
+module NamedDimsExt
 
 using .NamedDims: NamedDimsArray
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate, valfromaxis

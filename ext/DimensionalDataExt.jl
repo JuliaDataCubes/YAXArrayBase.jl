@@ -1,4 +1,4 @@
-module DimensionalDataImpl
+module DimensionalDataExt
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate, valfromaxis
 using DimensionalData: DimArray, DimensionalData, data, Dim, metadata
 
