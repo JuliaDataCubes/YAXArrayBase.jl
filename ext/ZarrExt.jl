@@ -2,10 +2,15 @@ module ZarrExt
 using Zarr: ZArray, ZGroup, zgroup, zcreate,
 to_zarrtype, zopen, Compressor
 import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs, get_var_dims, get_global_attrs, create_dataset, add_var, create_empty, backendlist, backendregex
+using YAXArrayBase
 
+export get_var_handle, get_varnames, get_var_dims, get_var_attrs,
+create_empty, add_var, allow_parallel_write,
+to_dataset, allow_missings
 struct ZarrDataset
   g::ZGroup
 end
+
 ZarrDataset(g::String;mode="r") = ZarrDataset(zopen(g,mode,fill_as_missing=false))
 
 get_var_dims(ds::ZarrDataset,name) = reverse(ds[name].attrs["_ARRAY_DIMENSIONS"])
@@ -47,9 +52,10 @@ end
 
 create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(path, attrs=gatts))
 
-backendlist[:zarr] = ZarrDataset
-push!(backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
-
+function __init__()
+  YAXArrayBase.backendlist[:zarr] = ZarrDataset
+  push!(YAXArrayBase.backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
+end
 allow_parallel_write(::ZarrDataset) = true
 allow_missings(::ZarrDataset) = false
 to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g)
