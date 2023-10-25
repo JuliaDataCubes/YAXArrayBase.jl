@@ -112,4 +112,10 @@ struct GDALDataset
     trans::Vector{Float64}
     bands::OrderedDict{String}
 end
-
+struct GDALBand{T}
+    filename::String
+    band::Int
+    size::Tuple{Int,Int}
+    attrs::Dict{String,Any}
+    cs::T
+end

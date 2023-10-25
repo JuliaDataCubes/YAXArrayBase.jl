@@ -10,7 +10,7 @@ const AG = ArchGDAL
 using DataStructures: OrderedDict
 import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs,
   get_var_dims, get_global_attrs, create_dataset, add_var, create_empty, backendlist,
-  backendregex, dimname, dimvals, iscontdim, getattributes, GDALDataset
+  backendregex, dimname, dimvals, iscontdim, getattributes, GDALDataset, GDALBand
 using YAXArrayBase: backendlist, backendregex
 
 include("src/ArchGDALArrays.jl")

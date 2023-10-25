@@ -1,11 +1,5 @@
 
-struct GDALBand{T} <: AG.DiskArrays.AbstractDiskArray{T,2}
-    filename::String
-    band::Int
-    size::Tuple{Int,Int}
-    attrs::Dict{String,Any}
-    cs::GridChunks{2}
-end
+
 function GDALBand(b, filename, i)
     s = size(b)
     atts = getbandattributes(b)
