@@ -1,4 +1,3 @@
-module ArchGDALDatasets
 import ArchGDAL: RasterDataset, AbstractRasterBand,
   getgeotransform, width, height, getname, getcolorinterp,
   getband, nraster, getdataset, ArchGDAL
@@ -212,11 +211,3 @@ allow_parallel_write(::GDALDataset) = false
 
 allow_missings(::Type{<:GDALDataset}) = false
 allow_missings(::GDALDataset) = false
-
-backendlist[:gdal] = GDALDataset
-push!(backendregex,r".tif$"=>GDALDataset)
-push!(backendregex,r".gtif$"=>GDALDataset)
-push!(backendregex,r".tiff$"=>GDALDataset)
-push!(backendregex,r".gtiff$"=>GDALDataset)
-
-end

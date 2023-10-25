@@ -1,4 +1,3 @@
-module ArchGDALArrays
 import ArchGDAL: RasterDataset, AbstractRasterBand,
   getgeotransform, width, height, getname, getcolorinterp,
   getband, nraster, getdataset
@@ -86,5 +85,4 @@ function getbandattributes(a::AbstractRasterBand)
   insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
   insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
   atts
-end
 end
