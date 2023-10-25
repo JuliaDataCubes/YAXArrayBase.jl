@@ -1,8 +1,3 @@
-import ArchGDAL: RasterDataset, AbstractRasterBand,
-  getgeotransform, width, height, getname, getcolorinterp,
-  getband, nraster, getdataset
-import YAXArrayBase: dimname, dimvals, iscontdim, getattributes, dimname
-
 function dimname(a::RasterDataset, i)
     if i == 1
         return :Y

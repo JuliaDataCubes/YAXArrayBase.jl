@@ -1,12 +1,11 @@
 module ZarrExt
 using Zarr: ZArray, ZGroup, zgroup, zcreate,
 to_zarrtype, zopen, Compressor
-import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs, get_var_dims, get_global_attrs, create_dataset, add_var, create_empty, backendlist, backendregex
+import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs,
+  get_var_dims, get_global_attrs, create_dataset, add_var, create_empty,
+  backendlist, backendregex, allow_missings, allow_parallel_write, to_dataset,
+  iscompressed, ZarrDataset, defaultfillval
 using YAXArrayBase
-
-struct ZarrDataset
-  g::ZGroup
-end
 
 ZarrDataset(g::String;mode="r") = ZarrDataset(zopen(g,mode,fill_as_missing=false))
 

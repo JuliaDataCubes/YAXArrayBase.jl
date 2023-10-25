@@ -94,3 +94,22 @@ to_dataset(g::String; driver=:all, kwargs...) = to_dataset(backendfrompath(g;dri
 
 to_dataset(g; kwargs...) = g
 to_dataset(T::Type{<:Any}, g::String;kwargs...) = T(g;kwargs...)
+
+# Defining structs to be used by Zarr, NetCDF, GDAL
+struct ZarrDataset{T}
+  g::T
+end
+
+struct NetCDFDataset
+  filename::String
+  mode::UInt16
+end
+
+struct GDALDataset
+    filename::String
+    bandsize::Tuple{Int,Int}
+    projection::String
+    trans::Vector{Float64}
+    bands::OrderedDict{String}
+end
+

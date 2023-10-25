@@ -1,6 +1,9 @@
 module NetCDFExt
 using NetCDF
-import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs, get_var_dims, get_global_attrs, create_dataset,add_var, create_empty, backendlist, backendregex
+import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs,
+  get_var_dims, get_global_attrs, create_dataset, add_var, create_empty,
+  backendlist, backendregex, allow_missings, allow_parallel_write, to_dataset,
+  iscompressed, NetCDFDataset
 using YAXArrayBase
 
 """
@@ -13,10 +16,7 @@ as a data sink:
 
 - `compress = -1` set the compression level for the NetCDF file
 """
-struct NetCDFDataset
-  filename::String
-  mode::UInt16
-end
+
 NetCDFDataset(filename;mode="r") = mode == "r" ? NetCDFDataset(filename,NC_NOWRITE) : NetCDFDataset(filename,NC_WRITE)
 
 import .NetCDF: AbstractDiskArray, readblock!, writeblock!, haschunks, eachchunk

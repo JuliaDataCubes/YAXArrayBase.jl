@@ -1,9 +1,3 @@
-import ArchGDAL: RasterDataset, AbstractRasterBand,
-  getgeotransform, width, height, getname, getcolorinterp,
-  getband, nraster, getdataset, ArchGDAL
-using ArchGDAL.DiskArrays: GridChunks, DiskArrays, eachchunk
-import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs, get_var_dims, get_global_attrs, create_dataset, add_var, create_empty, backendlist, backendregex
-const AG = ArchGDAL
 
 struct GDALBand{T} <: AG.DiskArrays.AbstractDiskArray{T,2}
     filename::String
@@ -33,14 +27,6 @@ function DiskArrays.writeblock!(b::GDALBand, ain, r::AbstractUnitRange...)
             DiskArrays.writeblock!(bh, ain, r...)
         end
     end
-end
-
-struct GDALDataset
-    filename::String
-    bandsize::Tuple{Int,Int}
-    projection::String
-    trans::Vector{Float64}
-    bands::OrderedDict{String}
 end
 
 function GDALDataset(filename;mode="r")
