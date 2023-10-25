@@ -1,5 +1,5 @@
 module AxisKeysExt
-import AxisKeys
+using AxisKeys
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate, valfromaxis
 
 dimnames(a::AxisKeys.KeyedArray) = AxisKeys.dimnames(a)

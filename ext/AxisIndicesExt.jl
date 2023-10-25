@@ -1,8 +1,8 @@
 module AxisIndicesExt
 import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate, valfromaxis
-using AxisIndices: AbstractAxis,AxisIndicesArray
+using AxisIndices
 
-valfromaxis(ax::AbstractAxis) = keys(ax)
+valfromaxis(ax::AxisIndices.AbstractAxis) = keys(ax)
 
 getdata(a::AxisIndices.AxisIndicesArray) = parent(a)
 
