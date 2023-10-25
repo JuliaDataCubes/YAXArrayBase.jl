@@ -13,8 +13,8 @@ import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs
   backendregex, dimname, dimvals, iscontdim, getattributes, GDALDataset
 using YAXArrayBase: backendlist, backendregex
 
-include("ArchGDALArrays.jl")
-include("ArchGDALDatasets.jl")
+include("src/ArchGDALArrays.jl")
+include("src/ArchGDALDatasets.jl")
 
 function __init__()
     backendlist[:gdal] = GDALDataset
