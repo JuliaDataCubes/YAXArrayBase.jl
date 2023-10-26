@@ -5,7 +5,6 @@ import YAXArrayBase: create_dataset, get_var_handle, get_varnames, get_var_attrs
   get_var_dims, get_global_attrs, create_dataset, add_var, create_empty,
   backendlist, backendregex, allow_missings, allow_parallel_write, to_dataset,
   iscompressed, ZarrDataset, defaultfillval
-using YAXArrayBase
 
 ZarrDataset(g::String;mode="r") = ZarrDataset(zopen(g,mode,fill_as_missing=false))
 
@@ -49,8 +48,8 @@ end
 create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(path, attrs=gatts))
 
 function __init__()
-  YAXArrayBase.backendlist[:zarr] = ZarrDataset
-  push!(YAXArrayBase.backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
+  backendlist[:zarr] = ZarrDataset
+  push!(backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
 end
 allow_parallel_write(::ZarrDataset) = true
 allow_missings(::ZarrDataset) = false
