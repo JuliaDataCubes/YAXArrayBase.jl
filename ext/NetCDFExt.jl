@@ -19,7 +19,7 @@ as a data sink:
 
 NetCDFDataset(filename;mode="r") = mode == "r" ? NetCDFDataset(filename,NC_NOWRITE) : NetCDFDataset(filename,NC_WRITE)
 
-import .NetCDF: AbstractDiskArray, readblock!, writeblock!, haschunks, eachchunk
+import NetCDF: AbstractDiskArray, readblock!, writeblock!, haschunks, eachchunk
 
 struct NetCDFVariable{T,N} <: AbstractDiskArray{T,N}
   filename::String
