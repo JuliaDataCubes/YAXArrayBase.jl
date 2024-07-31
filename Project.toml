@@ -1,16 +1,38 @@
 name = "YAXArrayBase"
 uuid = "90b8fcef-0c2d-428d-9c56-5f86629e9d14"
 authors = ["Fabian Gans <fgans@bgc-jena.mpg.de>"]
-version = "0.6.1"
+version = "0.7.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
-Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+
 
 [compat]
-DataStructures = "0.17, 0.18"
-Requires = "1"
-julia = "1.6"
+DataStructures = "0.17,0.18"
+julia = "1.9"
+ArchGDAL = "0.10"
+AxisArrays = "0.4"
+AxisKeys = "0.2"
+DimensionalData = "0.24"
+NetCDF = "0.11"
+Zarr = "0.8"
 
+[extensions]
+ArchGDALExt = "ArchGDAL"
+AxisArraysExt = "AxisArrays"
+AxisKeysExt = "AxisKeys"
+DimensionalDataExt = "DimensionalData"
+NamedDimsExt = "NamedDims"
+NetCDFExt = "NetCDF"
+ZarrExt = "Zarr"
+
+[weakdeps]
+ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
+AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
+NamedDims = "356022a1-0364-5f58-8944-0da4b18d706f"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
+Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"

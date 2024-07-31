@@ -1,6 +1,11 @@
-import .ArchGDAL: RasterDataset, AbstractRasterBand,
+module ArchGDALExt
+import ArchGDAL: RasterDataset, AbstractRasterBand,
   getgeotransform, width, height, getname, getcolorinterp,
   getband, nraster, getdataset
+using ArchGDAL: ArchGDAL as AG
+  import YAXArrayBase: dimname, dimnames, dimvals, iscontdim, getattributes, getdata, yaxcreate
+
+#include("archgdaldataset.jl")
 
 function dimname(a::RasterDataset, i)
     if i == 1
@@ -33,10 +38,10 @@ end
 iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
 function getattributes(a::RasterDataset)
     globatts = Dict{String,Any}(
-        "projection_PROJ4"=>ArchGDAL.toPROJ4(ArchGDAL.newspatialref(ArchGDAL.getproj(a))),
-        "projection_WKT"=>ArchGDAL.toWKT(ArchGDAL.newspatialref(ArchGDAL.getproj(a))),
+        "projection_PROJ4"=>AG.toPROJ4(AG.newspatialref(AG.getproj(a))),
+        "projection_WKT"=>AG.toWKT(AG.newspatialref(AG.getproj(a))),
     )
-    bands = (getbandattributes(ArchGDAL.getband(a, i)) for i in 1:size(a, 3))
+    bands = (getbandattributes(AG.getband(a, i)) for i in 1:size(a, 3))
     allbands = mergewith(bands...) do a1,a2
         isequal(a1,a2) ? a1 : missing
     end
@@ -65,7 +70,7 @@ function dimvals(b::AbstractRasterBand, i)
 end
 iscontdim(a::AbstractRasterBand, i) = true
 function getattributes(a::AbstractRasterBand)
-  atts = getattributes(ArchGDAL.RasterDataset(ArchGDAL.getdataset(a)))
+  atts = getattributes(AG.RasterDataset(AG.getdataset(a)))
   bandatts = getbandattributes(a)
   merge(atts, bandatts)
 end
@@ -84,4 +89,5 @@ function getbandattributes(a::AbstractRasterBand)
   insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
   insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
   atts
+end
 end

@@ -1,25 +1,9 @@
-using YAXArrayBase, DimensionalData, AxisArrays, AxisIndices, Test
+using TestItems
 
-struct M
-end
-Base.ndims(::M) = 2
-YAXArrayBase.getdata(::M)  = reshape(1:12,3,4)
-YAXArrayBase.dimname(::M,i) = i==1 ? :x : :y
-YAXArrayBase.dimvals(::M,i) = i==1 ? (0.5:1.0:2.5) : (1.5:0.5:3.0)
-YAXArrayBase.getattributes(::M) = Dict{String,Any}("a1"=>5, "a2"=>"att")
 
-@testset "AxisIndices" begin
-    using AxisIndices: AxisIndices
-    d = yaxconvert(AxisIndices.AxisIndicesArray,M())
-    @test d isa AxisIndices.AxisIndicesArray
-    @test getdata(d) == reshape(1:12,3,4)
-    @test YAXArrayBase.dimnames(d) == (:Dim_1, :Dim_2)
-    @test dimvals(d,1) == 0.5:1.0:2.5
-    @test dimvals(d,2) == 1.5:0.5:3.0
-end
-
-@testset "AxisKeys" begin
+@testitem "AxisKeys" begin
     using AxisKeys: KeyedArray
+    include("mock.jl")
     d = yaxconvert(KeyedArray,M())
     @test d isa KeyedArray
     @test getdata(d) == reshape(1:12,3,4)
@@ -29,8 +13,9 @@ end
 end
 
 
-@testset "AxisArrays" begin
+@testitem "AxisArrays" begin
     using AxisArrays: AxisArrays
+    include("mock.jl")
     d = yaxconvert(AxisArrays.AxisArray,M())
     @test d isa AxisArrays.AxisArray
     @test getdata(d) == reshape(1:12,3,4)
@@ -39,7 +24,8 @@ end
     @test dimvals(d,2) == 1.5:0.5:3.0
 end
 
-@testset "NamedTuples" begin
+@testitem "NamedTuples" begin
+    include("mock.jl")
     d = yaxconvert(NamedTuple,M())
     @test d isa NamedTuple
     @test getdata(d) == reshape(1:12,3,4)
@@ -48,16 +34,18 @@ end
     @test dimvals(d,2) == 1.5:0.5:3.0
 end
 
-@testset "NamedDims" begin
+@testitem "NamedDims" begin
     using NamedDims: NamedDimsArray
+    include("mock.jl")
     d = yaxconvert(NamedDimsArray,M())
     @test d isa NamedDimsArray
     @test getdata(d) == reshape(1:12,3,4)
     @test YAXArrayBase.dimnames(d) == (:x, :y)
 end
 
-@testset "DimensionalData" begin
+@testitem "DimensionalData" begin
     using DimensionalData
+    include("mock.jl")
     d = yaxconvert(DimArray,M())
     @test d isa DimArray
     @test getdata(d) == reshape(1:12,3,4)
@@ -67,8 +55,9 @@ end
     @test getattributes(d) == Dict{String,Any}("a1"=>5, "a2"=>"att")
 end
 
-@testset "ArchGDAL" begin
+@testitem "ArchGDAL" begin
   import Downloads
+  include("mock.jl")
   p = Downloads.download("https://download.osgeo.org/geotiff/samples/gdal_eg/cea.tif")
   using ArchGDAL
   AG=ArchGDAL
