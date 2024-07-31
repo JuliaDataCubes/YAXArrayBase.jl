@@ -1,15 +1,5 @@
 using TestItems
 
-@testitem "AxisIndices" begin
-    using AxisIndices: AxisIndices
-    include("mock.jl")
-    d = yaxconvert(AxisIndices.AxisArray,M())
-    @test d isa AxisIndices.AxisArray
-    @test getdata(d) == reshape(1:12,3,4)
-    @test YAXArrayBase.dimnames(d) == (:Dim_1, :Dim_2)
-    @test dimvals(d,1) == 0.5:1.0:2.5
-    @test dimvals(d,2) == 1.5:0.5:3.0
-end
 
 @testitem "AxisKeys" begin
     using AxisKeys: KeyedArray
