@@ -1,7 +1,6 @@
 [deps]
 ArchGDAL = "c9ce4bd3-c3d5-55b8-8973-c0e20141b8c3"
 AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
-AxisIndices = "f52c9ee2-1b1c-4fd8-8546-6350938c7f11"
 AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
 DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
