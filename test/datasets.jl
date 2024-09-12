@@ -55,7 +55,21 @@ h = get_var_handle(ds_zarr, "psl")
 @test allow_parallel_write(ds_zarr) == true
 @test allow_missings(ds_zarr) == false
 end
-
+@testset "Reading ArchGDAL" begin
+  using ArchGDAL
+  import Downloads
+  p3 = Downloads.download("https://download.osgeo.org/geotiff/samples/gdal_eg/cea.tif")
+  ds_tif = YAXArrayBase.to_dataset(p3, driver=:gdal)
+  vn = get_varnames(ds_tif)
+  @test sort(vn) == ["Gray"]
+  @test get_var_dims(ds_tif, "Gray") == ("X", "Y")
+  @test haskey(get_var_attrs(ds_tif, "Gray"), "projection")
+  h = get_var_handle(ds_tif, "Gray")
+  @test !YAXArrayBase.iscompressed(h)
+  @test all(isapprox.(h[1:2,1:2], [0x00 0x00; 0x00 0x00]))
+  @test allow_parallel_write(ds_tif) == false
+  @test allow_missings(ds_tif) == true
+end
 function test_write(T)
     p = tempname()
     ds = create_empty(T, p)

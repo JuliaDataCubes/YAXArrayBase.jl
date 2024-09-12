@@ -135,7 +135,7 @@ function getproj(::Nothing, attrs)
 end
 
 
-function create_dataset(
+function YAB.create_dataset(
     ::Type{<:GDALDataset},
     outpath,
     gatts,
