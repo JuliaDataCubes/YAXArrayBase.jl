@@ -70,7 +70,7 @@ function GDALDataset(filename;mode="r")
 end
 Base.haskey(ds::GDALDataset, k) = in(k, ("X", "Y")) || haskey(ds.bands, k)
 #Implement Dataset interface
-function get_var_handle(ds::GDALDataset, name)
+function YAB.get_var_handle(ds::GDALDataset, name)
     if name == "X"
         range(ds.trans[1], length = ds.bandsize[1], step = ds.trans[2])
     elseif name == "Y"
@@ -81,9 +81,9 @@ function get_var_handle(ds::GDALDataset, name)
 end
 
 
-get_varnames(ds::GDALDataset) = collect(keys(ds.bands))
+YAB.get_varnames(ds::GDALDataset) = collect(keys(ds.bands))
 
-function get_var_dims(ds::GDALDataset, d) 
+function YAB.get_var_dims(ds::GDALDataset, d) 
     if d === "X"
         return ("X",)
     elseif d==="Y"
@@ -93,13 +93,13 @@ function get_var_dims(ds::GDALDataset, d)
     end
 end
 
-get_global_attrs(ds::GDALDataset) = Dict("projection"=>ds.projection)
+YAB.get_global_attrs(ds::GDALDataset) = Dict("projection"=>ds.projection)
 
-function get_var_attrs(ds::GDALDataset, name)
+function YAB.get_var_attrs(ds::GDALDataset, name)
     if name in ("Y", "X")
         Dict{String,Any}()
     else
-        merge(ds.bands[name].attrs,get_global_attrs(ds))
+        merge(ds.bands[name].attrs, YAB.get_global_attrs(ds))
     end
 end
 
@@ -135,7 +135,7 @@ function getproj(::Nothing, attrs)
 end
 
 
-function create_dataset(
+function YAB.create_dataset(
     ::Type{<:GDALDataset},
     outpath,
     gatts,
@@ -152,7 +152,7 @@ function create_dataset(
 )
     @assert length(dimnames) == 2
     proj, trans = if islon(dimnames[1]) && islat(dimnames[2])
-        #Lets set srs to EPSG:4326
+        #Lets set the crs to EPSG:4326
         proj = AG.importEPSG(4326)
         trans = totransform(dimvals[1], dimvals[2])
         proj, trans
@@ -216,9 +216,10 @@ allow_missings(::Type{<:GDALDataset}) = false
 allow_missings(::GDALDataset) = false
 
 function __init__()
-    backendlist[:gdal] = GDALDataset
-    push!(backendregex,r".tif$"=>GDALDataset)
-    push!(backendregex,r".gtif$"=>GDALDataset)
-    push!(backendregex,r".tiff$"=>GDALDataset)
-    push!(backendregex,r".gtiff$"=>GDALDataset)
+    @info "new driver key :gdal, updating backendlist."
+    YAB.backendlist[:gdal] = GDALDataset
+    push!(YAB.backendregex,r".tif$"=>GDALDataset)
+    push!(YAB.backendregex,r".gtif$"=>GDALDataset)
+    push!(YAB.backendregex,r".tiff$"=>GDALDataset)
+    push!(YAB.backendregex,r".gtiff$"=>GDALDataset)
 end

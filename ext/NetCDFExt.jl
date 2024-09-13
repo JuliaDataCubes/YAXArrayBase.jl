@@ -78,7 +78,9 @@ YAB.allow_missings(::Type{<:NetCDFDataset}) = false
 YAB.allow_missings(::NetCDFDataset) = false
 
 function __init__()
-YAB.backendlist[:netcdf] = NetCDFDataset
-push!(YAB.backendregex,r".nc$"=>NetCDFDataset)
+  @info "new driver key :netcdf, updating backendlist."
+  YAB.backendlist[:netcdf] = NetCDFDataset
+  push!(YAB.backendregex,r".nc$"=>NetCDFDataset)
 end
+
 end
