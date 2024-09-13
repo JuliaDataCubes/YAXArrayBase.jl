@@ -14,27 +14,40 @@ Base.size(b::GDALBand) = b.size
 DiskArrays.eachchunk(b::GDALBand) = b.cs
 DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
 
+# function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
+#         AG.read(b.filename) do ds
+#             AG.getband(ds, b.band) do bh
+#                 DiskArrays.readblock!(bh, aout, r...)
+#         end
+#     end
+#  end
 function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
-        AG.read(b.filename) do ds
-            AG.getband(ds, b.band) do bh
-                DiskArrays.readblock!(bh, aout, r...)
-            
+    chunk_size = size(first(b.cs))
+    chunk_indices = [div.(extrema(r[i]) .- 1, chunk_size[i]) .+ 1 for i in 1:2]
+    
+    AG.read(b.filename) do ds
+        AG.getband(ds, b.band) do bh
+            for i in chunk_indices[1][1]:chunk_indices[1][2], j in chunk_indices[2][1]:chunk_indices[2][2]
+                chunk = b.cs[i,j]
+                overlap = (intersect(r[1], chunk[1]), intersect(r[2], chunk[2]))
+                
+                if !isempty(overlap[1]) && !isempty(overlap[2])
+                    chunk_data = AG.read(bh, overlap...)
+                    
+                    aout_indices = (overlap[1] .- first(r[1]) .+ 1, overlap[2] .- first(r[2]) .+ 1)
+                    aout[aout_indices...] .= chunk_data
+                end
+            end
         end
     end
- end
-
- function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
+end
+function DiskArrays.readblock!(b::GDALBand, aout::AbstractArray, r::AbstractUnitRange...)
     aout2 = similar(aout)
     DiskArrays.readblock!(b, aout2, r)
     aout .= aout2
- end
-
- function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::Tuple{AbstractUnitRange, AbstractUnitRange})
-    AG.read(b.filename) do ds
-        AG.getband(ds, b.band) do bh
-            DiskArrays.readblock!(bh, aout, r...)
-        end
-    end
+end
+function DiskArrays.readblock!(b::GDALBand, aout::AbstractArray, r::Tuple{AbstractUnitRange, AbstractUnitRange})
+    DiskArrays.readblock!(b, aout, r...)
 end
 
 function DiskArrays.writeblock!(b::GDALBand, ain, r::AbstractUnitRange...)
