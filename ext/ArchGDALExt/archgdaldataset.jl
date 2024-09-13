@@ -22,7 +22,9 @@ DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
 #     end
 #  end
 function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
-    chunk_size = b.cs.chunks.ranges
+    @show eachchunk(b)
+    chunk_size = first(eachchunk(b))
+    @show chunk_size
     # Calculate chunk indices for all dimensions
     chunk_indices = [(div(first(r[i])-1, length(chunk_size[i]))+1):(div(last(r[i])-1, length(chunk_size[i]))+1)
         for i in eachindex(r)]
