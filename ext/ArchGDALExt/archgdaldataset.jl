@@ -24,18 +24,15 @@ DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
 function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
     AG.read(b.filename) do ds
         AG.getband(ds, b.band) do bh
-            (xsize, ysize) = AG.width(bh), AG.height(bh)
+            xsize, ysize = AG.width(bh), AG.height(bh)
             for chunk in eachchunk(b)
                 # Compute overlap between the requested range and the current chunk range
-                overlap = tuple((intersect(r[i], chunk[i]) for i in eachindex(r))...)
-                # If there's any overlap, process the chunk
-                if all(x -> !isempty(x), overlap)
-                    # Clip the overlap to the valid raster bounds
-                    overlap_clipped = (
-                        max(1, min(xsize, overlap[1])),  # Clip x-range to raster width
-                        max(1, min(ysize, overlap[2]))   # Clip y-range to raster height
-                    )
-                    # Read the chunk data from the band `bh` based on the clipped overlap
+                overlap = tuple(intersect(r[i], chunk[i]) for i in eachindex(r))                
+                overlap_clipped = (
+                    clip_overlap(overlap[1], xsize),  # Clip x-range to raster width
+                    clip_overlap(overlap[2], ysize)   # Clip y-range to raster height
+                )
+                if all(x -> !isempty(x), overlap_clipped)
                     chunk_data = AG.read(bh, overlap_clipped...)                    
                     aout_indices = tuple((overlap_clipped[i] .- first(r[i]) .+ 1 for i in eachindex(r))...)                    
                     view(aout, aout_indices...) .= chunk_data
@@ -44,7 +41,11 @@ function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange..
         end
     end
 end
-
+function clip_overlap(range, max_size)
+    start = max(1, range.start)
+    stop = min(max_size, range.stop)
+    return start <= stop ? start : stop
+end
 
 function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
     aout2 = similar(aout)
