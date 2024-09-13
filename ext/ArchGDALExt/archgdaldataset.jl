@@ -32,12 +32,12 @@ function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange..
     end
 end
 
-function DiskArrays.readblock!(b::GDALBand, aout::AbstractArray, r::AbstractUnitRange...)
+function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
     aout2 = similar(aout)
     DiskArrays.readblock!(b, aout2, r)
     aout .= aout2
 end
-function DiskArrays.readblock!(b::GDALBand, aout::AbstractArray, r::Tuple{AbstractUnitRange, AbstractUnitRange})
+function DiskArrays.readblock!(b::GDALBand, aout, r::Tuple{AbstractUnitRange, AbstractUnitRange})
     DiskArrays.readblock!(b, aout, r...)
 end
 
