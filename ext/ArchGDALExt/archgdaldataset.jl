@@ -29,6 +29,13 @@ function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange..
     aout .= aout2
  end
 
+ function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::Tuple{AbstractUnitRange, AbstractUnitRange})
+    AG.read(b.filename) do ds
+        AG.getband(ds, b.band) do bh
+            DiskArrays.readblock!(bh, aout, r...)
+        end
+    end
+end
 
 function DiskArrays.writeblock!(b::GDALBand, ain, r::AbstractUnitRange...)
     AG.read(b.filename, flags=AG.OF_Update) do ds
@@ -38,6 +45,13 @@ function DiskArrays.writeblock!(b::GDALBand, ain, r::AbstractUnitRange...)
     end
 end
 
+function DiskArrays.writeblock!(b::GDALBand, ain, r::Tuple{AbstractUnitRange, AbstractUnitRange})
+    AG.read(b.filename, flags=AG.OF_Update) do ds
+        AG.getband(ds, b.band) do bh
+            DiskArrays.writeblock!(bh, ain, r...)
+        end
+    end
+end
 struct GDALDataset
     filename::String
     bandsize::Tuple{Int,Int}
