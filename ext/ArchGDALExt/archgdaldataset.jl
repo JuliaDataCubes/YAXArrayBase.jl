@@ -134,7 +134,6 @@ function getproj(::Nothing, attrs)
     end
 end
 
-
 function YAB.create_dataset(
     ::Type{<:GDALDataset},
     outpath,
@@ -156,6 +155,7 @@ function YAB.create_dataset(
         proj = AG.importEPSG(4326)
         trans = totransform(dimvals[1], dimvals[2])
         proj, trans
+        # ? debug here, indices 1 and 2, the order.
     elseif isx(dimnames[1]) && isy(dimnames[2])
         #Try to find out srs
         proj = getproj(userproj, merge(gatts,varattrs...))
