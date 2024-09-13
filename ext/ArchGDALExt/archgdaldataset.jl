@@ -22,20 +22,20 @@ DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
 #     end
 #  end
 function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
-    chunk_size = size(first(b.cs))
-    chunk_indices = [div.(extrema(r[i]) .- 1, chunk_size[i]) .+ 1 for i in 1:2]
+    chunk_size = b.cs.chunks.ranges
+    # Calculate chunk indices for all dimensions
+    chunk_indices = [(div(first(r[i])-1, length(chunk_size[i]))+1):(div(last(r[i])-1, length(chunk_size[i]))+1)
+        for i in eachindex(r)]
     
     AG.read(b.filename) do ds
         AG.getband(ds, b.band) do bh
-            for i in chunk_indices[1][1]:chunk_indices[1][2], j in chunk_indices[2][1]:chunk_indices[2][2]
-                chunk = b.cs[i,j]
-                overlap = (intersect(r[1], chunk[1]), intersect(r[2], chunk[2]))
-                
-                if !isempty(overlap[1]) && !isempty(overlap[2])
+            for chunk_idx in CartesianIndices(Tuple(chunk_indices))
+                chunk = b.cs[chunk_idx...]
+                overlap = tuple((intersect(r[i], chunk[i]) for i in eachindex(r))...)
+                if all(x -> !isempty(x), overlap)
                     chunk_data = AG.read(bh, overlap...)
-                    
-                    aout_indices = (overlap[1] .- first(r[1]) .+ 1, overlap[2] .- first(r[2]) .+ 1)
-                    aout[aout_indices...] .= chunk_data
+                    aout_indices = tuple((overlap[i] .- first(r[i]) .+ 1 for i in eachindex(r))...)
+                    view(aout, aout_indices...) .= chunk_data
                 end
             end
         end
