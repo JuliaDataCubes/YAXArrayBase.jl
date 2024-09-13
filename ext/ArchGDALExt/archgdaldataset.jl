@@ -22,22 +22,29 @@ DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
 #     end
 #  end
 function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
-    # Open the dataset before reading
     AG.read(b.filename) do ds
-        # Get the correct band from the dataset
         AG.getband(ds, b.band) do bh
+            (xsize, ysize) = AG.width(bh), AG.height(bh)
             for chunk in eachchunk(b)
+                # Compute overlap between the requested range and the current chunk range
                 overlap = tuple((intersect(r[i], chunk[i]) for i in eachindex(r))...)
+                # If there's any overlap, process the chunk
                 if all(x -> !isempty(x), overlap)
-                    # Read the chunk data from the band `bh` for the overlapping ranges
-                    chunk_data = AG.read(bh, overlap...)
-                    aout_indices = tuple((overlap[i] .- first(r[i]) .+ 1 for i in eachindex(r))...)
+                    # Clip the overlap to the valid raster bounds
+                    overlap_clipped = (
+                        max(1, min(xsize, overlap[1])),  # Clip x-range to raster width
+                        max(1, min(ysize, overlap[2]))   # Clip y-range to raster height
+                    )
+                    # Read the chunk data from the band `bh` based on the clipped overlap
+                    chunk_data = AG.read(bh, overlap_clipped...)                    
+                    aout_indices = tuple((overlap_clipped[i] .- first(r[i]) .+ 1 for i in eachindex(r))...)                    
                     view(aout, aout_indices...) .= chunk_data
                 end
             end
         end
     end
 end
+
 
 function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
     aout2 = similar(aout)
