@@ -14,45 +14,15 @@ Base.size(b::GDALBand) = b.size
 DiskArrays.eachchunk(b::GDALBand) = b.cs
 DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
 
-# function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
-#         AG.read(b.filename) do ds
-#             AG.getband(ds, b.band) do bh
-#                 DiskArrays.readblock!(bh, aout, r...)
-#         end
-#     end
-#  end
 function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
-    AG.read(b.filename) do ds
-        AG.getband(ds, b.band) do bh
-            xsize, ysize = AG.width(bh), AG.height(bh)
-            for chunk in eachchunk(b)
-                # Compute overlap between the requested range and the current chunk range
-                overlap = tuple(intersect(r[i], chunk[i]) for i in eachindex(r))                
-                overlap_clipped = (
-                    clip_overlap(overlap[1], xsize),  # Clip x-range to raster width
-                    clip_overlap(overlap[2], ysize)   # Clip y-range to raster height
-                )
-                if all(x -> !isempty(x), overlap_clipped)
-                    chunk_data = AG.read(bh, overlap_clipped...)                    
-                    aout_indices = tuple((overlap_clipped[i] .- first(r[i]) .+ 1 for i in eachindex(r))...)                    
-                    view(aout, aout_indices...) .= chunk_data
-                end
-            end
+        AG.read(b.filename) do ds
+            AG.getband(ds, b.band) do bh
+                DiskArrays.readblock!(bh, aout, r...) # ? what to do if size(aout) < r ranges ?, i.e. chunk reads!
         end
     end
-end
-function clip_overlap(range, max_size)
-    start = max(1, range.start)
-    stop = min(max_size, range.stop)
-    return start <= stop ? start : stop
-end
+ end
 
-function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
-    aout2 = similar(aout)
-    DiskArrays.readblock!(b, aout2, r)
-    aout .= aout2
-end
-function DiskArrays.readblock!(b::GDALBand, aout, r::Tuple{AbstractUnitRange, AbstractUnitRange})
+function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::Tuple{AbstractUnitRange, AbstractUnitRange})
     DiskArrays.readblock!(b, aout, r...)
 end
 
@@ -63,14 +33,12 @@ function DiskArrays.writeblock!(b::GDALBand, ain, r::AbstractUnitRange...)
         end
     end
 end
-
-function DiskArrays.writeblock!(b::GDALBand, ain, r::Tuple{AbstractUnitRange, AbstractUnitRange})
-    AG.read(b.filename, flags=AG.OF_Update) do ds
-        AG.getband(ds, b.band) do bh
-            DiskArrays.writeblock!(bh, ain, r...)
-        end
-    end
+function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
+    aout2 = similar(aout)
+    DiskArrays.readblock!(b, aout2, r)
+    aout .= aout2
 end
+
 struct GDALDataset
     filename::String
     bandsize::Tuple{Int,Int}

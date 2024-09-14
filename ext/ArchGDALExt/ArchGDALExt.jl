@@ -40,6 +40,7 @@ module ArchGDALExt
             error("RasterDataset only has 3 dimensions")
         end
     end
+    
     iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
     function getattributes(a::RasterDataset)
         globatts = Dict{String,Any}(
@@ -50,7 +51,7 @@ module ArchGDALExt
         allbands = mergewith(bands...) do a1,a2
             isequal(a1,a2) ? a1 : missing
         end
-        merge(globatts, allbands)
+        return merge(globatts, allbands)
     end
 
 
@@ -75,9 +76,9 @@ module ArchGDALExt
     end
     iscontdim(a::AbstractRasterBand, i) = true
     function getattributes(a::AbstractRasterBand)
-    atts = getattributes(AG.RasterDataset(AG.getdataset(a)))
-    bandatts = getbandattributes(a)
-    merge(atts, bandatts)
+        atts = getattributes(AG.RasterDataset(AG.getdataset(a)))
+        bandatts = getbandattributes(a)
+        return merge(atts, bandatts)
     end
 
     function insertattifnot!(attrs, val, name, condition)
@@ -86,13 +87,13 @@ module ArchGDALExt
         end
     end
     function getbandattributes(a::AbstractRasterBand)
-    atts = Dict{String,Any}()
-    catdict = Dict((i-1)=>v for (i,v) in enumerate(AG.getcategorynames(a)))
-    insertattifnot!(atts, AG.getnodatavalue(a), "missing_value", isnothing)
-    insertattifnot!(atts, catdict, "labels", isempty)
-    insertattifnot!(atts, AG.getunittype(a), "units", isempty)
-    insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
-    insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
-    atts
+        atts = Dict{String,Any}()
+        catdict = Dict((i-1)=>v for (i,v) in enumerate(AG.getcategorynames(a)))
+        insertattifnot!(atts, AG.getnodatavalue(a), "missing_value", isnothing)
+        insertattifnot!(atts, catdict, "labels", isempty)
+        insertattifnot!(atts, AG.getunittype(a), "units", isempty)
+        insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
+        insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
+        return atts
     end
 end
