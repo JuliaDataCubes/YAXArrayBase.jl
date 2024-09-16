@@ -17,36 +17,37 @@ DiskArrays.haschunks(::GDALBand) = DiskArrays.Chunked()
 function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::AbstractUnitRange...)
         AG.read(b.filename) do ds
             AG.getband(ds, b.band) do bh
-                DiskArrays.readblock!(bh, aout, r...)
-            
+                DiskArrays.readblock!(bh, aout, r...) # ? what to do if size(aout) < r ranges ?, i.e. chunk reads! is a DiskArrays issue!
         end
     end
  end
 
- function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
-    aout2 = similar(aout)
-    DiskArrays.readblock!(b, aout2, r)
-    aout .= aout2
- end
-
+function DiskArrays.readblock!(b::GDALBand, aout::Matrix, r::Tuple{AbstractUnitRange, AbstractUnitRange})
+    DiskArrays.readblock!(b, aout, r...)
+end
 
 function DiskArrays.writeblock!(b::GDALBand, ain, r::AbstractUnitRange...)
-    AG.read(b.filename, flags=AG.OF_Update) do ds
+    AG.read(b.filename, flags=AG.OF_UPDATE) do ds
         AG.getband(ds, b.band) do bh
             DiskArrays.writeblock!(bh, ain, r...)
         end
     end
 end
+function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
+    aout2 = similar(aout)
+    DiskArrays.readblock!(b, aout2, r)
+    aout .= aout2
+end
 
 struct GDALDataset
     filename::String
     bandsize::Tuple{Int,Int}
-    projection::String
+    projection::Union{String, AG.AbstractSpatialRef}
     trans::Vector{Float64}
     bands::OrderedDict{String}
 end
 
-function GDALDataset(filename;mode="r")
+function GDALDataset(filename; mode="r")
     AG.read(filename) do r
         nb = AG.nraster(r)
         allbands = map(1:nb) do iband
@@ -120,20 +121,21 @@ function totransform(x, y)
 end
 totransform(x::AbstractRange, y::AbstractRange) =
     Float64[first(x), step(x), 0.0, first(y), 0.0, step(y)]
+
 getproj(userproj::String, attrs) = AG.importPROJ4(userproj)
 getproj(userproj::AG.AbstractSpatialRef, attrs) = userproj
+
 function getproj(::Nothing, attrs)
-    if haskey(attrs, "projection_PROJ4")
+    if haskey(attrs, "projection")
+        return AG.importWKT(attrs["projection"])
+    elseif haskey(attrs, "projection_PROJ4")
         return AG.importPROJ4(attrs["projection_PROJ4"])
     elseif haskey(attrs, "projection_WKT")
         return AG.importWKT(attrs["projection_WKT"])
     else
-        error(
-            "Could not determine output projection from attributes, please specify userproj",
-        )
+        error("Could not determine output projection from attributes, please specify userproj")
     end
 end
-
 
 function YAB.create_dataset(
     ::Type{<:GDALDataset},
@@ -150,15 +152,22 @@ function YAB.create_dataset(
     userproj = nothing,
     kwargs...,
 )
+    # ? flip dimnames and dimvals, this needs a more generic solution!
+    dimnames = reverse(dimnames)
+    dimvals = reverse(dimvals)
+
     @assert length(dimnames) == 2
+    merged_varattrs = merge(varattrs...)
+
     proj, trans = if islon(dimnames[1]) && islat(dimnames[2])
         #Lets set the crs to EPSG:4326
         proj = AG.importEPSG(4326)
         trans = totransform(dimvals[1], dimvals[2])
         proj, trans
     elseif isx(dimnames[1]) && isy(dimnames[2])
-        #Try to find out srs
-        proj = getproj(userproj, merge(gatts,varattrs...))
+        # Try to find out crs
+        all_attrs = merge(gatts, merged_varattrs)
+        proj = getproj(userproj, all_attrs)
         trans = totransform(dimvals[1], dimvals[2])
         proj, trans
     else
@@ -167,7 +176,13 @@ function YAB.create_dataset(
     cs = first(varchunks)
     @assert all(isequal(varchunks[1]), varchunks)
 
-    driver = AG.getdriver(AG.extensiondriver(outpath))
+    # driver = AG.getdriver(AG.extensiondriver(outpath)) # ? it looks like this driver (for .tif) is not working
+
+    if !endswith(lowercase(outpath), ".tif") && !endswith(lowercase(outpath), ".tiff")
+        outpath = outpath * ".tif"
+    end
+    # Use this:
+    driver = AG.getdriver("GTiff")
 
     nbands = length(varnames)
     dtype = promote_type(vartypes...)
@@ -179,16 +194,21 @@ function YAB.create_dataset(
         height = length(dimvals[2]),
         nbands = nbands,
         dtype = dtype,
-        options = ["BLOCKXSIZE=$(cs[1])", "BLOCKYSIZE=$(cs[2])"]
+        options = [
+            "BLOCKXSIZE=$(cs[1])",
+            "BLOCKYSIZE=$(cs[2])",
+            "TILED=YES",
+            "COMPRESS=LZW"
+            ]
     ) do ds
         AG.setgeotransform!(ds, trans)
         bands = map(1:length(varnames)) do i
             b = AG.getband(ds, i)
             icol = findfirst(isequal(varnames[i]), colornames)
             if isnothing(icol)
-                AG.setcolorinterp!(b, AG.GDAL.GDALColorInterp(0))
+                AG.setcolorinterp!(b, AG.GDALColorInterp(0))
             else
-                AG.setcolorinterp!(b, AG.GDAL.GDALColorInterp(icol - 1))
+                AG.setcolorinterp!(b, AG.GDALColorInterp(icol - 1))
             end
             AG.GDAL.gdalsetdescription(b.ptr, varnames[i])
             atts = varattrs[i]
