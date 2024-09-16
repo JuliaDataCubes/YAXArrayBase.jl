@@ -1,12 +1,10 @@
 # YAXArrayBase.jl
 
-![Lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)<!--
-![Lifecycle](https://img.shields.io/badge/lifecycle-stable-green.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-retired-orange.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-archived-red.svg)
-![Lifecycle](https://img.shields.io/badge/lifecycle-dormant-blue.svg) -->
-[![Build Status](https://travis-ci.com/JuliaDataCubes/YAXArrayBase.jl.svg?branch=master)](https://travis-ci.com/JuliaDataCubes/YAXArrayBase.jl)
-[![codecov.io](http://codecov.io/github/JuliaDataCubes/YAXArrayBase.jl/coverage.svg?branch=master)](http://codecov.io/github/JuliaDataCubes/YAXArrayBase.jl?branch=master)
+![Lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)
+[![][codecov-img]][codecov-url]
+
+[codecov-img]: https://codecov.io/gh/JuliaDataCubes/YAXArrayBase.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/JuliaDataCubes/YAXArrayBase.jl
 
 # YAXArrayBase
 
