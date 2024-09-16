@@ -152,7 +152,7 @@ function YAB.create_dataset(
     userproj = nothing,
     kwargs...,
 )
-    # ? flip dimnames and dimvals
+    # ? flip dimnames and dimvals, this needs a more generic solution!
     dimnames = reverse(dimnames)
     dimvals = reverse(dimvals)
 
