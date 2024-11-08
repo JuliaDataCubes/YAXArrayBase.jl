@@ -1,7 +1,7 @@
 name = "YAXArrayBase"
 uuid = "90b8fcef-0c2d-428d-9c56-5f86629e9d14"
 authors = ["Fabian Gans <fgans@bgc-jena.mpg.de>"]
-version = "0.7.3"
+version = "0.7.4"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
@@ -15,7 +15,7 @@ julia = "1.9"
 ArchGDAL = "0.10"
 AxisArrays = "0.4"
 AxisKeys = "0.2"
-DimensionalData = "0.27, 0.28"
+DimensionalData = "0.27, 0.28, 0.29"
 NetCDF = "0.11, 0.12"
 Zarr = "0.8, 0.9"
 
