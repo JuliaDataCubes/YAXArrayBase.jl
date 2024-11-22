@@ -15,8 +15,33 @@ as a data sink:
 struct NetCDFDataset
   filename::String
   mode::UInt16
+  handle::Base.RefValue{Union{Nothing, NcFile}}
 end
-NetCDFDataset(filename;mode="r") = mode == "r" ? NetCDFDataset(filename,NC_NOWRITE) : NetCDFDataset(filename,NC_WRITE)
+function NetCDFDataset(filename;mode="r") 
+  m = mode == "r" ? NC_NOWRITE : NC_WRITE
+  NetCDFDataset(filename,m,Ref{Union{Nothing, NcFile}}(nothing)) 
+end
+function dsopen(f,ds::NetCDFDataset)
+  if ds.handle[] === nothing
+    NetCDF.open(f, ds.filename)
+  else
+    f(ds.handle[])
+  end
+end
+function YAB.open_dataset_handle(f, ds::NetCDFDataset)
+  if ds.handle[] === nothing
+    try
+      ds.handle[] = NetCDF.open(ds.filename, mode=ds.mode)
+      f(ds)
+    finally
+      ds.handle[]=nothing
+    end
+  else
+    f(ds)
+  end
+end
+
+
 
 import .NetCDF: AbstractDiskArray, readblock!, writeblock!, haschunks, eachchunk
 
@@ -49,15 +74,19 @@ YAB.iscompressed(v::NetCDFVariable) = NetCDF.open(v->v.compress > 0, v.filename,
 
 Base.size(v::NetCDFVariable) = v.size
 
-YAB.get_var_dims(ds::NetCDFDataset,name) = NetCDF.open(v->map(i->i.name,v[name].dim),ds.filename)
-YAB.get_varnames(ds::NetCDFDataset) = NetCDF.open(v->collect(keys(v.vars)),ds.filename)
-YAB.get_var_attrs(ds::NetCDFDataset, name) = NetCDF.open(v->v[name].atts,ds.filename)
-YAB.get_global_attrs(ds::NetCDFDataset) = NetCDF.open(nc->nc.gatts, ds.filename)
-function Base.getindex(ds::NetCDFDataset, i)
-  s,et = NetCDF.open(j->(size(j),eltype(j)),ds.filename,i)
-  NetCDFVariable{et,length(s)}(ds.filename, i, s)
+YAB.get_var_dims(ds::NetCDFDataset,name) = dsopen(v->map(i->i.name,v[name].dim),ds)
+YAB.get_varnames(ds::NetCDFDataset) = dsopen(v->collect(keys(v.vars)),ds)
+YAB.get_var_attrs(ds::NetCDFDataset, name) = dsopen(v->v[name].atts,ds)
+YAB.get_global_attrs(ds::NetCDFDataset) = dsopen(nc->nc.gatts, ds)
+function YAB.get_var_handle(ds::NetCDFDataset, i; persist = true)
+  if persist || ds.handle[] === nothing
+    s,et = NetCDF.open(j->(size(j),eltype(j)),ds.filename,i)
+    NetCDFVariable{et,length(s)}(ds.filename, i, s)
+  else
+    ds.handle[][i]
+  end
 end
-Base.haskey(ds::NetCDFDataset,k) = NetCDF.open(nc->haskey(nc.vars,k),ds.filename)
+Base.haskey(ds::NetCDFDataset,k) = dsopen(nc->haskey(nc.vars,k),ds)
 
 function YAB.add_var(p::NetCDFDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, compress = -1)

@@ -71,7 +71,7 @@ function GDALDataset(filename; mode="r")
 end
 Base.haskey(ds::GDALDataset, k) = in(k, ("X", "Y")) || haskey(ds.bands, k)
 #Implement Dataset interface
-function YAB.get_var_handle(ds::GDALDataset, name)
+function YAB.get_var_handle(ds::GDALDataset, name; persist=true)
     if name == "X"
         range(ds.trans[1], length = ds.bandsize[1], step = ds.trans[2])
     elseif name == "Y"
