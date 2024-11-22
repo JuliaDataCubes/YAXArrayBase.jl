@@ -38,6 +38,29 @@ h = get_var_handle(ds_nc, "tas")
 @test all(isapprox.(h[1:2,1:2], [215.893 217.168; 215.805 217.03]))
 @test allow_parallel_write(ds_nc) == false
 @test allow_missings(ds_nc) == false
+#Repeat the same test with an open get_var_handle
+ds_nc2 = YAXArrayBase.to_dataset(p2)
+YAXArrayBase.open_dataset_handle(ds_nc2) do ds_nc
+  @test ds_nc.handle[] !== nothing
+  vn = get_varnames(ds_nc)
+  @test sort(vn) == ["area", "lat", "lat_bnds", "lon", "lon_bnds", "msk_rgn",
+ "plev", "pr", "tas", "time", "time_bnds", "ua"]
+  @test get_var_dims(ds_nc, "tas") == ["lon", "lat", "time"]
+  @test get_var_dims(ds_nc, "area") == ["lon", "lat"]
+  @test get_var_dims(ds_nc, "time") == ["time"]
+  @test get_var_dims(ds_nc, "time_bnds") == ["bnds", "time"]
+  @test get_var_attrs(ds_nc,"tas")["long_name"] == "air_temperature"
+  h1 = get_var_handle(ds_nc, "tas",persist=true)
+  @test !(h1 isa NetCDF.NcVar)
+  @test !YAXArrayBase.iscompressed(h1)
+  @test all(isapprox.(h1[1:2,1:2], [215.893 217.168; 215.805 217.03]))
+  h2 = get_var_handle(ds_nc, "tas",persist=false)
+  @test h2 isa NetCDF.NcVar
+  @test !YAXArrayBase.iscompressed(h2)
+  @test all(isapprox.(h2[1:2,1:2], [215.893 217.168; 215.805 217.03]))
+  @test allow_parallel_write(ds_nc) == false
+  @test allow_missings(ds_nc) == false
+end
 end
 
 @testset "Reading Zarr" begin
@@ -71,22 +94,22 @@ end
   @test allow_missings(ds_tif) == true
 end
 function test_write(T)
-    p = tempname()
-    ds = create_empty(T, p)
-add_var(ds, 0.5:1:9.5, "lon", ("lon",), Dict("units"=>"degrees_east"))
-add_var(ds, 20:-1.0:1, "lat", ("lat",), Dict("units"=>"degrees_north"))
-v = add_var(ds, Float32, "tas", (10,20), ("lon", "lat"), Dict{String,Any}("units"=>"Celsius"))
+  p = tempname()
+  ds = create_empty(T, p)
+  add_var(ds, 0.5:1:9.5, "lon", ("lon",), Dict("units"=>"degrees_east"))
+  add_var(ds, 20:-1.0:1, "lat", ("lat",), Dict("units"=>"degrees_north"))
+  v = add_var(ds, Float32, "tas", (10,20), ("lon", "lat"), Dict{String,Any}("units"=>"Celsius"))
 
-v[:,:] = collect(reshape(1:200, 10, 20))
+  v[:,:] = collect(reshape(1:200, 10, 20))
 
-@test sort(get_varnames(ds)) == ["lat","lon","tas"]
-@test get_var_dims(ds, "tas") == ["lon", "lat"]
-@test get_var_dims(ds, "lon") == ["lon"]
-@test get_var_attrs(ds,"tas")["units"] == "Celsius"
-h = get_var_handle(ds, "lon")
-@test h[:] == 0.5:1:9.5
-v = get_var_handle(ds, "tas")
-@test v[1:2,1:2] == [1 11; 2 12]
+  @test sort(get_varnames(ds)) == ["lat","lon","tas"]
+  @test get_var_dims(ds, "tas") == ["lon", "lat"]
+  @test get_var_dims(ds, "lon") == ["lon"]
+  @test get_var_attrs(ds,"tas")["units"] == "Celsius"
+  h = get_var_handle(ds, "lon")
+  @test h[:] == 0.5:1:9.5
+  v = get_var_handle(ds, "tas")
+  @test v[1:2,1:2] == [1 11; 2 12]
 end
 
 @testset "Writing NetCDF" begin
