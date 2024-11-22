@@ -1,6 +1,6 @@
 #Functions to be implemented for Dataset sources:
 "Return a DiskArray handle to a dataset"
-get_var_handle(ds, name) = ds[name]
+get_var_handle(ds, name; persist=true) = ds[name]
 
 "Return a list of variable names"
 function get_varnames end
@@ -17,6 +17,11 @@ function get_global_attrs end
 #Functions to be implemented for Dataset sinks
 "Initialize and return a handle to a new empty dataset"
 function create_empty end
+
+"Apply a function `f` on a dataset `ds` while keeping possible file handles open during the operations"
+function open_dataset_handle(f, ds)
+  f(ds)
+end
 
 """
     add_var(ds, T, name, s, dimlist, atts)
