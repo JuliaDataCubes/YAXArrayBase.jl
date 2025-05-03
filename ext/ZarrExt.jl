@@ -5,7 +5,7 @@ module ZarrExt
   export ZarrDataset
 
   function __init__()
-    @info "new driver key :zarr, updating backendlist."
+    @debug "new driver key :zarr, updating backendlist."
     YAB.backendlist[:zarr] = ZarrDataset
     push!(YAB.backendregex, r"(.zarr$)|(.zarr/$)"=>ZarrDataset)
   end
