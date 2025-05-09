@@ -375,7 +375,7 @@ end
 
 
 function __init__()
-    @info "new driver key :gdal, updating backendlist."
+    @debug "new driver key :gdal, updating backendlist."
     YAB.backendlist[:gdal] = GDALDataset
     push!(YAB.backendregex,r".tif$"=>GDALDataset)
     push!(YAB.backendregex,r".gtif$"=>GDALDataset)
