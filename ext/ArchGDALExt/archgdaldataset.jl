@@ -1,3 +1,5 @@
+import Base: ==
+import DataStructures: OrderedDict
 struct GDALBand{T} <: AG.DiskArrays.AbstractDiskArray{T,2}
     filename::String
     band::Int
@@ -39,6 +41,7 @@ function DiskArrays.readblock!(b::GDALBand, aout, r::AbstractUnitRange...)
     aout .= aout2
 end
 
+
 struct GDALDataset
     filename::String
     bandsize::Tuple{Int,Int}
@@ -48,25 +51,31 @@ struct GDALDataset
 end
 
 function GDALDataset(filename; mode="r")
-    AG.read(filename) do r
-        nb = AG.nraster(r)
-        allbands = map(1:nb) do iband
-            b = AG.getband(r, iband)
-            gb = GDALBand(b, filename, iband)
-            name = AG.GDAL.gdalgetdescription(b.ptr)
-            if isempty(name)
-                name = AG.getname(AG.getcolorinterp(b))
+    nb = AG.read(filename) do r
+        AG.nraster(r)
+    end
+    if nb == 0
+        return GDALMultiDataset(filename)
+    else
+        AG.read(filename) do r   
+            allbands = map(1:nb) do iband
+                b = AG.getband(r, iband)
+                gb = GDALBand(b, filename, iband)
+                name = AG.GDAL.gdalgetdescription(b.ptr)
+                if isempty(name)
+                    name = AG.getname(AG.getcolorinterp(b))
+                end
+                name => gb
             end
-            name => gb
+            proj = AG.getproj(r)
+            trans = AG.getgeotransform(r)
+            s = AG._common_size(r)
+            allnames = first.(allbands)
+            if !allunique(allnames)
+                allbands = ["Band$i"=>last(v) for (i,v) in enumerate(allbands)]
+            end
+            GDALDataset(filename, s[1:end-1], proj, trans, OrderedDict(allbands))
         end
-        proj = AG.getproj(r)
-        trans = AG.getgeotransform(r)
-        s = AG._common_size(r)
-        allnames = first.(allbands)
-        if !allunique(allnames)
-            allbands = ["Band$i"=>last(v) for (i,v) in enumerate(allbands)]
-        end
-        GDALDataset(filename, s[1:end-1], proj, trans, OrderedDict(allbands))
     end
 end
 Base.haskey(ds::GDALDataset, k) = in(k, ("X", "Y")) || haskey(ds.bands, k)
@@ -234,6 +243,136 @@ allow_parallel_write(::GDALDataset) = false
 
 allow_missings(::Type{<:GDALDataset}) = false
 allow_missings(::GDALDataset) = false
+
+#MultiDataset implementation
+struct GDALBandInfo
+    bandsize::Tuple{Int,Int}
+    projection::Union{String, AG.AbstractSpatialRef}
+    trans::Vector{Float64}
+end
+==(a::GDALBandInfo,b::GDALBandInfo) = a.bandsize == b.bandsize &&
+    a.projection == b.projection &&
+    a.trans == b.trans
+struct GDALMultiDataset
+    bandinfo::Vector{GDALBandInfo}
+    bands::OrderedDict{String,Tuple{String,GDALBand,Int}}
+end
+function getbandinfo(gds::GDALMultiDataset, k) 
+    if k in keys(gds.bands)
+        i = gds.bands[k][3]
+        bandext = length(gds.bandinfo) == 1 ? "" : "_$i"
+        gds.bandinfo[i],"X$bandext","Y$bandext"
+    else
+        nspl = split(k,'_')
+        i = if length(nspl)==1
+            1
+        else
+            parse(Int,nspl[2])
+        end
+        if startswith(k,"X")
+            gds.bandinfo[i],k,replace(k,'X'=>'Y')
+        elseif startswith(k,"Y")
+            gds.bandinfo[i],replace(k,'Y'=>'X'),k
+        else
+            error()
+        end
+    end
+end
+
+function GDALMultiDataset(filename)
+    subdatasets = OrderedDict{String, String}()
+    AG.read(filename) do ds
+        subds = AG.metadata(ds; domain="SUBDATASETS")
+        for dsstring in subds
+            k,v = split(dsstring,'=')
+            if endswith(k,"_NAME")
+                k2 = last(split(v,':'))
+                subdatasets[k2] = v
+            end
+        end
+    end
+    bandinfos = GDALBandInfo[]
+    allbands = OrderedDict{String,Tuple{String,GDALBand,Int}}()
+    for (k,v) in subdatasets
+        AG.read(v) do ds
+            s = AG._common_size(ds)
+            bandinfo = GDALBandInfo((s[1],s[2]), AG.getproj(ds), AG.getgeotransform(ds))
+            i = findfirst(==(bandinfo),bandinfos)
+            if isnothing(i)
+                push!(bandinfos,bandinfo)
+                i = length(bandinfos)
+            end
+            nr = AG.nraster(ds)
+            for iband in 1:nr
+                b = AG.getband(ds, iband)
+                gb = GDALBand(b, v, iband)
+                if nr == 1
+                    allbands[k] = (v,gb,iband)
+                else
+                    allbands[(string(k,"_",iband))] = (v,gb,i)
+                end
+            end
+        end 
+    end
+    GDALMultiDataset(bandinfos, allbands)
+end
+
+function xyname(ds::GDALMultiDataset,k)
+    if k in keys(ds.bands)
+        i = ds.bands[k][3]
+        bandext = length(ds.bandinfo) == 1 ? "" : "_$i"
+        "X$bandext","Y$bandext"
+    else
+        if startswith(k,"X")
+            k,replace(k,'X'=>'Y')
+        elseif startswith(k,"Y")
+            replace(k,'Y'=>'X'),k
+        else
+            error()
+        end
+    end
+end
+function Base.haskey(ds::GDALMultiDataset, k) 
+    x,y = xyname(ds,k)
+    in(k, (x,y)) || haskey(ds.bands, k)
+end
+    #Implement Dataset interface
+function YAB.get_var_handle(ds::GDALMultiDataset, name; persist=true)
+    bandinfo,x,y = getbandinfo(ds,name)
+    if name == x
+        range(bandinfo.trans[1], length = bandinfo.bandsize[1], step = bandinfo.trans[2])
+    elseif name == y
+        range(bandinfo.trans[4], length = bandinfo.bandsize[2], step = bandinfo.trans[6])
+    else
+        ds.bands[name][2]
+    end
+end
+
+
+YAB.get_varnames(ds::GDALMultiDataset) = collect(keys(ds.bands))
+
+function YAB.get_var_dims(ds::GDALMultiDataset, d) 
+    x,y = xyname(ds,d)
+    if d == x
+        return (x,)
+    elseif d == y
+        return (y,)
+    else
+        return (x, y)
+    end
+end
+
+YAB.get_global_attrs(ds::GDALMultiDataset) = Dict()
+
+function YAB.get_var_attrs(ds::GDALMultiDataset, name)
+    _,x,y = getbandinfo(ds,name)
+    if name in (x,y)
+        Dict{String,Any}()
+    else
+        ds.bands[name][2].attrs
+    end
+end
+
 
 function __init__()
     @info "new driver key :gdal, updating backendlist."
