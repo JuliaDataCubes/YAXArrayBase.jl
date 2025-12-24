@@ -6,7 +6,6 @@ version = "0.7.6"
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
-Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
 
 [compat]
@@ -36,3 +35,4 @@ DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 NamedDims = "356022a1-0364-5f58-8944-0da4b18d706f"
 NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Zarr = "0a941bbe-ad1d-11e8-39d9-ab76183a1d99"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
