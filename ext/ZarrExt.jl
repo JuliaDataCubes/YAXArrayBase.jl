@@ -49,7 +49,7 @@ function YAB.add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(dimnames))))
   fv = get(attr, "_FillValue", get(attr, "missing_value", YAB.defaultfillval(T)))
   attr3 = filter(attr2) do (k, v)
-    isa(v, AbstractFloat) && !isnan(v)
+    !isa(v, AbstractFloat) || !isnan(v)
   end
   za = zcreate(T, p.g, varname, s...; fill_value=fv, fill_as_missing, attrs=attr3, chunks=chunksize, kwargs...)
   za
