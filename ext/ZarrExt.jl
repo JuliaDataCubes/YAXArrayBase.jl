@@ -15,13 +15,13 @@ end
 struct ZarrDataset
   g::ZGroup
 end
-function ZarrDataset(g::String; mode="r")
+function ZarrDataset(g::String; mode="r", path="", kwargs...)
   store = if endswith(g, "zip")
     ZipStore(ZipReader(SimpleFileDiskArray(g)))
   else
     g
   end
-  ZarrDataset(zopen(store, mode, fill_as_missing=false))
+  ZarrDataset(zopen(store, mode, fill_as_missing=false, path=path))
 end
 
 YAB.get_var_dims(ds::ZarrDataset, name) = reverse(ds[name].attrs["_ARRAY_DIMENSIONS"])
@@ -70,7 +70,7 @@ YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(p
 
 YAB.allow_parallel_write(::ZarrDataset) = true
 YAB.allow_missings(::ZarrDataset) = false
-YAB.to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g)
+YAB.to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g; kwargs...)
 YAB.iscompressed(a::ZArray{<:Any,<:Any,<:Compressor}) = true
 
 

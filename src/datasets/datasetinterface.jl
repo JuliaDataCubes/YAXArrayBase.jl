@@ -95,7 +95,7 @@ function backendfrompath(g::String; driver = :all)
   end
 end
 
-to_dataset(g::String; driver=:all, kwargs...) = to_dataset(backendfrompath(g;driver),g,kwargs...)
+to_dataset(g::String; driver=:all, kwargs...) = to_dataset(backendfrompath(g; driver), g; kwargs...)
 
 to_dataset(g; kwargs...) = g
 to_dataset(T::Type{<:Any}, g::String;kwargs...) = T(g;kwargs...)
