@@ -99,10 +99,10 @@ function test_write(T)
   add_var(ds, 0.5:1:9.5, "lon", ("lon",), Dict("units"=>"degrees_east"))
   add_var(ds, 20:-1.0:1, "lat", ("lat",), Dict("units"=>"degrees_north"))
   v = add_var(ds, Float32, "tas", (10,20), ("lon", "lat"), Dict{String,Any}("units"=>"Celsius"))
-
+  w = add_var(ds, Rational{Int}, "tas2", (10,20), ("lon", "lat"), Dict{String,Any}("units"=>"Celsius")) 
   v[:,:] = collect(reshape(1:200, 10, 20))
-
-  @test sort(get_varnames(ds)) == ["lat","lon","tas"]
+  w[:,:] = collect(reshape(1:200, 10, 20)) .// 2
+  @test sort(get_varnames(ds)) == ["lat","lon","tas", "tas2"]
   @test get_var_dims(ds, "tas") == ["lon", "lat"]
   @test get_var_dims(ds, "lon") == ["lon"]
   @test get_var_attrs(ds,"tas")["units"] == "Celsius"
@@ -110,6 +110,8 @@ function test_write(T)
   @test h[:] == 0.5:1:9.5
   v = get_var_handle(ds, "tas")
   @test v[1:2,1:2] == [1 11; 2 12]
+  w = get_var_handle(ds, "tas2")
+  @test w[1:2,1:2] == [1 11; 2 12] .// 2
 end
 
 @testset "Writing NetCDF" begin

@@ -8,7 +8,7 @@ include("axisarrays/namedtuple.jl")
 
 defaultfillval(T::Type{<:AbstractFloat}) = convert(T,1e32)
 defaultfillval(::Type{Float16}) = Float16(3.2e4)
-defaultfillval(T::Type{<:Integer}) = typemax(T)
+defaultfillval(T::Type{<:Real}) = typemax(T)
 defaultfillval(T::Type{<:AbstractString}) = ""
 
 function __init__()
