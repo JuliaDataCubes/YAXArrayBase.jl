@@ -15,7 +15,10 @@ end
 struct ZarrDataset
   g::ZGroup
 end
-function ZarrDataset(g::String; mode="r", path="", kwargs...)
+function ZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
+  if g isa ZGroup
+    return ZarrDataset(g)
+  end
   store = if endswith(g, "zip")
     ZipStore(ZipReader(SimpleFileDiskArray(g)))
   else
