@@ -64,17 +64,19 @@ end
 end
 
 @testset "Reading Zarr" begin
-p = "gs://cmip6/CMIP6/HighResMIP/CMCC/CMCC-CM2-HR4/highresSST-present/r1i1p1f1/6hrPlev/psl/gn/v20170706/"
+p = "https://s3.bgc-jena.mpg.de:9000/esdl-esdc-v3.0.2/esdc-16d-2.5deg-46x72x1440-3.0.2.zarr"
+z = zopen(p)
+ds_zopen = to_dataset(z)
 ds_zarr = to_dataset(p,driver=:zarr)
+@test ds_zopen == ds_zarr
 vn = get_varnames(ds_zarr)
-@test sort(vn) == ["lat", "lat_bnds", "lon", "lon_bnds", "psl", "time", "time_bnds"]
-@test get_var_dims(ds_zarr, "psl") == ["lon", "lat", "time"]
+@test sort(vn) == ["aerosol_optical_thickness_550", "air_temperature_2m", "bare_soil_evaporation", "burnt_area", "cot", "cth", "ctt", "evaporation", "evaporation_era5", "evaporative_stress", "gross_primary_productivity", "interception_loss", "kndvi", "lat", "latent_energy", "lon", "max_air_temperature_2m", "min_air_temperature_2m", "nbar_blue", "nbar_green", "nbar_nir", "nbar_red", "nbar_swir1", "nbar_swir2", "nbar_swir3", "ndvi", "net_ecosystem_exchange", "net_radiation", "nirv", "open_water_evaporation", "potential_evaporation", "precipitation_era5", "radiation_era5", "root_moisture", "sensible_heat", "sif_gome2_jj", "sif_gome2_pk", "sif_gosif", "sif_rtsif", "sm", "snow_sublimation", "surface_moisture", "terrestrial_ecosystem_respiration", "time", "transpiration"]
+@test get_var_dims(ds_zarr, "sm") == ["lon", "lat", "time"]
 @test get_var_dims(ds_zarr, "time") == ["time"]
-@test get_var_dims(ds_zarr, "time_bnds") == ["bnds", "time"]
-@test get_var_attrs(ds_zarr,"psl")["long_name"] == "Sea Level Pressure"
-h = get_var_handle(ds_zarr, "psl")
+@test get_var_attrs(ds_zarr,"sm")["long_name"] == "Volumetric Soil Moisture"
+h = get_var_handle(ds_zarr, "air_temperature_2m")
 @test YAXArrayBase.iscompressed(h)
-@test all(isapprox.(h[1:2,1:2,1], [99360.8  99334.9; 99360.8  99335.4]))
+@test all(isapprox.(h[1:2,1:2,1], [-28.8662  -23.4534; -28.8041  -23.1681]))
 @test allow_parallel_write(ds_zarr) == true
 @test allow_missings(ds_zarr) == false
 end
