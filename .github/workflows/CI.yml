@@ -20,7 +20,8 @@ jobs:
           - ubuntu-latest
           - macOS-latest
           - windows-latest
-        arch:
+	arch:
+		- default
           - x64
     steps:
       - uses: actions/checkout@v6
