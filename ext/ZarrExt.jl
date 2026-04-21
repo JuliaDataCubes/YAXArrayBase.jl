@@ -49,7 +49,7 @@ Base.haskey(ds::ZarrDataset, k) = haskey(ds.g, k)
 
 function YAB.add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, fill_as_missing=false, kwargs...)
-  attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(dimnames))))
+  attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(String, dimnames))))
   fv = get(attr, "_FillValue", get(attr, "missing_value", YAB.defaultfillval(T)))
   attr3 = filter(attr2) do (k, v)
     !isa(v, AbstractFloat) || !isnan(v)
