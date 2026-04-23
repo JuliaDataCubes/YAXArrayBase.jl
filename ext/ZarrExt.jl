@@ -10,6 +10,7 @@ function __init__()
   @debug "new driver key :zarr, updating backendlist."
   YAB.backendlist[:zarr] = ZarrDataset
   push!(YAB.backendregex, r"(.zarr$)|(.zarr/$)|(zarr.zip$)" => ZarrDataset)
+  YAB.backendlist[:geozarr] = GeoZarrDataset
 end
 
 struct ZarrDataset
@@ -106,6 +107,92 @@ function DiskArrays.eachchunk(a::SimpleFileDiskArray)
   end
 end
 
+# Start GeoZarrDataset
+struct GeoZarrDataset
+  g::ZGroup
+  axes_ranges::Dict{String,Any} # Mapping from dimension name to dimension
+  axes::Dict{String,Any} # Mapping from array name to axis name
+end
 
+function GeoZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
+  zg = if g isa ZGroup
+      g
+  else
+    store = if endswith(g, "zip")
+      ZipStore(ZipReader(SimpleFileDiskArray(g)))
+    else
+      g
+    end
+    (zopen(store, mode, fill_as_missing=false, path=path))
+  end
+  zg
+  axis_ranges = Dict{String,Any}()
+  axes = Dict{String,Any}()
+  for (name, arr) in zg.arrays
+    if haskey(arr.attrs, "spatial:dimensions")
+      transformtype = get(arr.attrs, "spatial:transform", "affine")
+      transform = arr.attrs["spatial:transform"]
+      axnames = arr.attrs["spatial:dimensions"]
+      @show transform
+      firstrange = if transform[2] == 0
+        range(transform[3], length = size(arr, 1), step = transform[1])
+      else
+        throw(ArgumentError("Rotation is currently not supported"))
+      end
+      secrange = if transform[4] == 0
+        range(transform[6], length = size(arr, 2), step = transform[5])
+      else
+        throw(ArgumentError("Rotation is currently not supported"))
+      end
+      @show axis_ranges
+      firstaxis = filter(x->last(x) == firstrange, axis_ranges)
+      if isempty(firstaxis) 
+        push!(axis_ranges, axnames[1] => firstrange)
+      else 
+        axnames[1] = first(firstaxis)
+      end
+      secaxis = (filter(x->last(x) == secrange, axis_ranges))
+      if isempty(secaxis)   
+        push!(axis_ranges, axnames[2] => secrange)
+      else
+        axnames[2] = first(secaxis)
+      end
+
+      push!(axes, name => axnames)
+      @show arr.attrs
+      @show arr.attrs["spatial:dimensions"]
+    end
+  end
+  @show axis_ranges, axes
+  GeoZarrDataset(zg, axis_ranges, axes)
+end
+
+
+YAB.get_var_dims(ds::GeoZarrDataset, name) = ds.axes[name]
+YAB.get_varnames(ds::GeoZarrDataset) = collect(keys(ds.g.arrays))
+YAB.get_global_attrs(ds::GeoZarrDataset) = ds.g.attrs
+Base.getindex(ds::GeoZarrDataset, i) = ds.g[i]
+Base.haskey(ds::GeoZarrDataset, k) = haskey(ds.g, k) || haskey(ds.axes_ranges, k)
+
+function YAB.get_var_attrs(ds::GeoZarrDataset, name)
+  #We add the fill value to the attributes to be consistent with NetCDF
+  haskey(ds.g, name) || return Dict()
+  a = ds[name]
+  if a.metadata.fill_value !== nothing
+    merge(ds[name].attrs, Dict("_FillValue" => a.metadata.fill_value))
+  else
+    ds[name].attrs
+  end
+end
+
+function YAB.get_var_handle(ds::GeoZarrDataset, name; persist=true)
+  @show name
+  @show keys(ds.axes_ranges)
+  if haskey(ds.axes_ranges, name)
+    ds.axes_ranges[name]
+  else
+    ds.g[name]
+  end
+end
 
 end

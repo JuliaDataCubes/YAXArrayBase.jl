@@ -78,6 +78,24 @@ end
     @test allow_missings(ds_zarr) == false
   end
 end
+
+@testset "Reading GeoZarr" begin
+  
+  path = "geozarr-spec/test-datasets/valid/spatial/spatial-registration-default.zarr"
+  ds_geozarr = to_dataset(path, driver=:geozarr)
+  vn = get_varnames(ds_geozarr)
+  @test sort(vn) == ["ar"]
+end
+
+@testset "Writing and loading zerodim Zarr" begin
+  path = tempname() * "testdatazerodim.zarr"
+  ds = create_empty(YAXArrayBase.backendlist[:zarr], path)
+  add_var(ds, fill(1), "layer", (), Dict{String, Any}())
+  ds_loaded = to_dataset(path, driver=:zarr)
+  @test ds_loaded["layer"][] == 1
+  @test ds_loaded["layer"].attrs["_ARRAY_DIMENSIONS"] == []
+end
+
 @testset "Reading ArchGDAL" begin
   using ArchGDAL
   import Downloads
