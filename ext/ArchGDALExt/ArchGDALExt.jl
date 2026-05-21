@@ -59,7 +59,7 @@ function dimsymbols(a)
     # else
     #     (:X, :Y)
     # end
-    (:x, :Y)
+    (:X, :Y)
 end
 
     iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
