@@ -46,8 +46,10 @@ using ArchGDAL.GeoFormatTypes: WellKnownText, EPSG
     end
     
 dimsymbols(a::AbstractRasterBand) = dimsymbols(AG.getdataset(a))
-function dimsymbols(a::RasterDataset)
-    wkt = WellKnownText(AG.toWKT(AG.newspatialref(AG.getproj(a))))
+get_projection(a) = AG.getproj(a)
+get_projection(a::AbstractRasterBand) = AG.getproj(AG.getdataset(a))
+function dimsymbols(a)
+    wkt = WellKnownText(AG.toWKT(AG.newspatialref(get_projection(a))))
     epsg = convert(EPSG, wkt)
     if epsg.val == 4326
         (:Y, :X)
