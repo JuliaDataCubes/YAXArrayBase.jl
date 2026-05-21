@@ -45,17 +45,21 @@ using ArchGDAL.GeoFormatTypes: WellKnownText, EPSG
         end
     end
     
-dimsymbols(a::AbstractRasterBand) = dimsymbols(AG.getdataset(a))
-get_projection(a) = AG.getproj(a)
-get_projection(a::AbstractRasterBand) = AG.getproj(AG.getdataset(a))
+# get_projection(a) = AG.getproj(a)
+# get_projection(a::AbstractRasterBand) = AG.getproj(AG.getdataset(a))
 function dimsymbols(a)
-    wkt = WellKnownText(AG.toWKT(AG.newspatialref(get_projection(a))))
-    epsg = convert(EPSG, wkt)
-    if epsg.val == 4326
-        (:Y, :X)
-    else
-        (:X, :Y)
-    end
+    # I had prepared the following code to swap x and y fpr EPSG:4326, 
+    # However it turns out that, at least in the example https://github.com/yeesian/ArchGDALDatasets/raw/307f8f0e584a39a050c042849004e6a2bd674f99/gdalworkshop/world.tif
+    # dimensions are not swapped although it indicates that projection. So for now we just return x,y until we find more examples that are broken
+    # wkt = WellKnownText(AG.toWKT(AG.newspatialref(get_projection(a))))
+    # epsg = convert(EPSG, wkt)
+    # @show epsg.val
+    # if epsg.val == (4326,)
+    #     (:Y, :X)
+    # else
+    #     (:X, :Y)
+    # end
+    (:x, :Y)
 end
 
     iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
