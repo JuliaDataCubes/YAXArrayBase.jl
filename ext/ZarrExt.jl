@@ -125,13 +125,13 @@ function GeoZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
     end
     (zopen(store, mode, fill_as_missing=false, path=path))
   end
-  zg
+  @show zg
   axis_ranges = Dict{String,Any}()
   axes = Dict{String,Any}()
   for (name, arr) in zg.arrays
     if haskey(arr.attrs, "spatial:dimensions")
       transformtype = get(arr.attrs, "spatial:transform", "affine")
-      transform = arr.attrs["spatial:transform"]
+      transform = get(arr.attrs, "spatial:transform", [1,0,0,1,0,0])
       axnames = arr.attrs["spatial:dimensions"]
       @show transform
       firstrange = if transform[2] == 0
@@ -194,5 +194,55 @@ function YAB.get_var_handle(ds::GeoZarrDataset, name; persist=true)
     ds.g[name]
   end
 end
+
+coords(d) = Dict("type" => "array")
+
+function YAB.add_var(p::GeoZarrDataset, T::Type, varname, s, dimnames, attr;
+  chunksize=s, fill_as_missing=false, kwargs...)
+  # This follows the zarr-coords specification for handling the coordinates
+  # See https://github.com/christophenoel/zarr-coords
+  dims = reverse(collect(dimnames))
+  attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => dims))
+  @show attr, varname
+  @show T
+  coordsattr = Dict(d => coords(d) for d in dims)
+  merge!(attr2, Dict("coords:coordinates" => coordsattr))
+  fv = get(attr, "_FillValue", get(attr, "missing_value", YAB.defaultfillval(T)))
+  attr3 = filter(attr2) do (k, v)
+    !isa(v, AbstractFloat) || !isnan(v)
+  end
+  za = zcreate(T, p.g, varname, s...; fill_value=fv, fill_as_missing, attrs=attr3, chunks=chunksize, kwargs...)
+  za
+end
+
+function create_dataset(T::GeoZarrDataset, path, gatts, dimnames, dimvals, dimattrs, vartypes, varnames, vardims, varattrs, varchunks; kwargs...)
+  @show dimnames, dimvals, dimattr
+  ds = create_empty(T, path, gatts)
+  axlengths = Dict{String, Int}()
+  for (dname, dval, dattr) in zip(dimnames, dimvals, dimattrs)
+    add_var(ds, dval, dname, (dname,), dattr)
+    axlengths[dname] = length(dval)
+  end
+  for (T, vn, vd, va, vc) in zip(vartypes, varnames, vardims, varattrs, varchunks)
+    s = getindex.(Ref(axlengths),vd) 
+    add_var(ds, T, vn, (s...,), vd, va; chunksize = vc, kwargs...)
+  end
+  ds
+end
+
+
+#Special case for init with Arrays
+function YAB.add_var(p::GeoZarrDataset, a::AbstractArray, varname, dimnames, attr;
+  kwargs...)
+  T = to_zarrtype(a)
+  b = add_var(p, T, varname, size(a), dimnames, attr; kwargs...)
+  b .= a
+  a
+end
+
+YAB.create_empty(::Type{GeoZarrDataset}, path, gatts=Dict()) = GeoZarrDataset(zgroup(path, attrs=gatts))
+
+YAB.allow_parallel_write(::GeoZarrDataset) = true
+YAB.allow_missings(::GeoZarrDataset) = false
 
 end

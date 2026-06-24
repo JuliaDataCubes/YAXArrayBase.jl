@@ -80,11 +80,28 @@ end
 end
 
 @testset "Reading GeoZarr" begin
-  
-  path = "geozarr-spec/test-datasets/valid/spatial/spatial-registration-default.zarr"
-  ds_geozarr = to_dataset(path, driver=:geozarr)
-  vn = get_varnames(ds_geozarr)
-  @test sort(vn) == ["ar"]
+  @testset "Registration default" begin
+    path = "geozarr-spec/test-datasets/valid/spatial/spatial-registration-default.zarr"
+    ds_geozarr = to_dataset(path, driver=:geozarr)
+    vn = get_varnames(ds_geozarr)
+    @test sort(vn) == ["ar"]
+    @test get_var_handle(ds_geozarr, "x") == 8.0:-1.0:1.0
+    @test get_var_handle(ds_geozarr, "y") == 0:7
+  end
+
+  @testset "Rotation broken" begin
+    path_rotation = "geozarr-spec/test-datasets/valid/spatial/spatial-rotated.zarr"
+    @test_throws ArgumentError ds_rot = to_dataset(path_rotation, driver=:geozarr)
+  end
+
+  @testset "crs" begin
+    path_crs = "geozarr-spec/test-datasets/valid/crs/crs-epsg-4326.zarr"
+    ds_crs = to_dataset(path_crs, driver=:geozarr)
+    
+  end
+
+
+
 end
 
 @testset "Writing and loading zerodim Zarr" begin
