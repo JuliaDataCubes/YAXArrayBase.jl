@@ -10,6 +10,7 @@ function __init__()
   @debug "new driver key :zarr, updating backendlist."
   YAB.backendlist[:zarr] = ZarrDataset
   push!(YAB.backendregex, r"(.zarr$)|(.zarr/$)|(zarr.zip$)" => ZarrDataset)
+  YAB.backendlist[:geozarr] = GeoZarrDataset
 end
 
 struct ZarrDataset
@@ -108,6 +109,142 @@ function DiskArrays.eachchunk(a::SimpleFileDiskArray)
   end
 end
 
+# Start GeoZarrDataset
+struct GeoZarrDataset
+  g::ZGroup
+  axes_ranges::Dict{String,Any} # Mapping from dimension name to dimension
+  axes::Dict{String,Any} # Mapping from array name to axis name
+end
 
+function GeoZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
+  zg = if g isa ZGroup
+      g
+  else
+    store = if endswith(g, "zip")
+      ZipStore(ZipReader(SimpleFileDiskArray(g)))
+    else
+      g
+    end
+    (zopen(store, mode, fill_as_missing=false, path=path))
+  end
+  @show zg
+  axis_ranges = Dict{String,Any}()
+  axes = Dict{String,Any}()
+  for (name, arr) in zg.arrays
+    if haskey(arr.attrs, "spatial:dimensions")
+      transformtype = get(arr.attrs, "spatial:transform", "affine")
+      transform = get(arr.attrs, "spatial:transform", [1,0,0,1,0,0])
+      axnames = arr.attrs["spatial:dimensions"]
+      @show transform
+      firstrange = if transform[2] == 0
+        range(transform[3], length = size(arr, 1), step = transform[1])
+      else
+        throw(ArgumentError("Rotation is currently not supported"))
+      end
+      secrange = if transform[4] == 0
+        range(transform[6], length = size(arr, 2), step = transform[5])
+      else
+        throw(ArgumentError("Rotation is currently not supported"))
+      end
+      @show axis_ranges
+      firstaxis = filter(x->last(x) == firstrange, axis_ranges)
+      if isempty(firstaxis) 
+        push!(axis_ranges, axnames[1] => firstrange)
+      else 
+        axnames[1] = first(firstaxis)
+      end
+      secaxis = (filter(x->last(x) == secrange, axis_ranges))
+      if isempty(secaxis)   
+        push!(axis_ranges, axnames[2] => secrange)
+      else
+        axnames[2] = first(secaxis)
+      end
+
+      push!(axes, name => axnames)
+      @show arr.attrs
+      @show arr.attrs["spatial:dimensions"]
+    end
+  end
+  @show axis_ranges, axes
+  GeoZarrDataset(zg, axis_ranges, axes)
+end
+
+
+YAB.get_var_dims(ds::GeoZarrDataset, name) = ds.axes[name]
+YAB.get_varnames(ds::GeoZarrDataset) = collect(keys(ds.g.arrays))
+YAB.get_global_attrs(ds::GeoZarrDataset) = ds.g.attrs
+Base.getindex(ds::GeoZarrDataset, i) = ds.g[i]
+Base.haskey(ds::GeoZarrDataset, k) = haskey(ds.g, k) || haskey(ds.axes_ranges, k)
+
+function YAB.get_var_attrs(ds::GeoZarrDataset, name)
+  #We add the fill value to the attributes to be consistent with NetCDF
+  haskey(ds.g, name) || return Dict()
+  a = ds[name]
+  if a.metadata.fill_value !== nothing
+    merge(ds[name].attrs, Dict("_FillValue" => a.metadata.fill_value))
+  else
+    ds[name].attrs
+  end
+end
+
+function YAB.get_var_handle(ds::GeoZarrDataset, name; persist=true)
+  @show name
+  @show keys(ds.axes_ranges)
+  if haskey(ds.axes_ranges, name)
+    ds.axes_ranges[name]
+  else
+    ds.g[name]
+  end
+end
+
+coords(d) = Dict("type" => "array")
+
+function YAB.add_var(p::GeoZarrDataset, T::Type, varname, s, dimnames, attr;
+  chunksize=s, fill_as_missing=false, kwargs...)
+  # This follows the zarr-coords specification for handling the coordinates
+  # See https://github.com/christophenoel/zarr-coords
+  dims = reverse(collect(dimnames))
+  attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => dims))
+  @show attr, varname
+  @show T
+  coordsattr = Dict(d => coords(d) for d in dims)
+  merge!(attr2, Dict("coords:coordinates" => coordsattr))
+  fv = get(attr, "_FillValue", get(attr, "missing_value", YAB.defaultfillval(T)))
+  attr3 = filter(attr2) do (k, v)
+    !isa(v, AbstractFloat) || !isnan(v)
+  end
+  za = zcreate(T, p.g, varname, s...; fill_value=fv, fill_as_missing, attrs=attr3, chunks=chunksize, kwargs...)
+  za
+end
+
+function create_dataset(T::GeoZarrDataset, path, gatts, dimnames, dimvals, dimattrs, vartypes, varnames, vardims, varattrs, varchunks; kwargs...)
+  @show dimnames, dimvals, dimattr
+  ds = create_empty(T, path, gatts)
+  axlengths = Dict{String, Int}()
+  for (dname, dval, dattr) in zip(dimnames, dimvals, dimattrs)
+    add_var(ds, dval, dname, (dname,), dattr)
+    axlengths[dname] = length(dval)
+  end
+  for (T, vn, vd, va, vc) in zip(vartypes, varnames, vardims, varattrs, varchunks)
+    s = getindex.(Ref(axlengths),vd) 
+    add_var(ds, T, vn, (s...,), vd, va; chunksize = vc, kwargs...)
+  end
+  ds
+end
+
+
+#Special case for init with Arrays
+function YAB.add_var(p::GeoZarrDataset, a::AbstractArray, varname, dimnames, attr;
+  kwargs...)
+  T = to_zarrtype(a)
+  b = add_var(p, T, varname, size(a), dimnames, attr; kwargs...)
+  b .= a
+  a
+end
+
+YAB.create_empty(::Type{GeoZarrDataset}, path, gatts=Dict()) = GeoZarrDataset(zgroup(path, attrs=gatts))
+
+YAB.allow_parallel_write(::GeoZarrDataset) = true
+YAB.allow_missings(::GeoZarrDataset) = false
 
 end
