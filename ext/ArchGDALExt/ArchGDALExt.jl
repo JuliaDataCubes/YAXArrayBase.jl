@@ -2,7 +2,7 @@ module ArchGDALExt
     import ArchGDAL: RasterDataset, AbstractRasterBand, getgeotransform, width, height
     import ArchGDAL: getname, getcolorinterp, getband, nraster, getdataset
     using ArchGDAL: ArchGDAL as AG
-
+using ArchGDAL.GeoFormatTypes: WellKnownText, EPSG
     import ArchGDAL.DiskArrays: GridChunks, eachchunk
     import ArchGDAL.DiskArrays
     
@@ -13,16 +13,20 @@ module ArchGDALExt
     include("archgdaldataset.jl")
 
     function dimname(a::RasterDataset, i)
+    xy = dimsymbols(a)
         if i == 1
-            return :Y
+        return xy[1]
         elseif i == 2
-            return :X
+        return xy[2]
         elseif i == 3
             return :Band
         else
             error("RasterDataset only has 3 dimensions")
         end
     end
+
+
+
     function dimvals(a::RasterDataset, i)
         if i == 1
             geo=getgeotransform(a)
@@ -41,6 +45,23 @@ module ArchGDALExt
         end
     end
     
+# get_projection(a) = AG.getproj(a)
+# get_projection(a::AbstractRasterBand) = AG.getproj(AG.getdataset(a))
+function dimsymbols(a)
+    # I had prepared the following code to swap x and y fpr EPSG:4326, 
+    # However it turns out that, at least in the example https://github.com/yeesian/ArchGDALDatasets/raw/307f8f0e584a39a050c042849004e6a2bd674f99/gdalworkshop/world.tif
+    # dimensions are not swapped although it indicates that projection. So for now we just return x,y until we find more examples that are broken
+    # wkt = WellKnownText(AG.toWKT(AG.newspatialref(get_projection(a))))
+    # epsg = convert(EPSG, wkt)
+    # @show epsg.val
+    # if epsg.val == (4326,)
+    #     (:Y, :X)
+    # else
+    #     (:X, :Y)
+    # end
+    (:X, :Y)
+end
+
     iscontdim(a::RasterDataset, i) = i < 3 ? true : nraster(a)<8
     function getattributes(a::RasterDataset)
         globatts = Dict{String,Any}(
@@ -55,45 +76,46 @@ module ArchGDALExt
     end
 
 
-    function dimname(::AbstractRasterBand, i)
-        if i == 1
-            return :Y
-        elseif i == 2
-            return :X
-        else
-            error("RasterDataset only has 3 dimensions")
-        end
+function dimname(a::AbstractRasterBand, i)
+    xy = dimsymbols(a)
+    if i == 1
+        return xy[1]
+    elseif i == 2
+        return xy[2]
+    else
+        error("RasterDataset only has 3 dimensions")
     end
-    function dimvals(b::AbstractRasterBand, i)
-        geo = getgeotransform(getdataset(b))
-        if i == 1
-            range(geo[1],length=width(b), step=geo[2])
-        elseif i == 2
-            range(geo[4],length=height(b), step=geo[6])
-        else
-            error("RasterDataset only has 3 dimensions")
-        end
+end
+function dimvals(b::AbstractRasterBand, i)
+    geo = getgeotransform(getdataset(b))
+    if i == 1
+        range(geo[1], length=width(b), step=geo[2])
+    elseif i == 2
+        range(geo[4], length=height(b), step=geo[6])
+    else
+        error("RasterDataset only has 3 dimensions")
     end
-    iscontdim(a::AbstractRasterBand, i) = true
-    function getattributes(a::AbstractRasterBand)
-        atts = getattributes(AG.RasterDataset(AG.getdataset(a)))
-        bandatts = getbandattributes(a)
-        return merge(atts, bandatts)
-    end
+end
+iscontdim(a::AbstractRasterBand, i) = true
+function getattributes(a::AbstractRasterBand)
+    atts = getattributes(AG.RasterDataset(AG.getdataset(a)))
+    bandatts = getbandattributes(a)
+    return merge(atts, bandatts)
+end
 
-    function insertattifnot!(attrs, val, name, condition)
-        if !condition(val)
-            attrs[name] = val
-        end
+function insertattifnot!(attrs, val, name, condition)
+    if !condition(val)
+        attrs[name] = val
     end
-    function getbandattributes(a::AbstractRasterBand)
-        atts = Dict{String,Any}()
-        catdict = Dict((i-1)=>v for (i,v) in enumerate(AG.getcategorynames(a)))
-        insertattifnot!(atts, AG.getnodatavalue(a), "missing_value", isnothing)
-        insertattifnot!(atts, catdict, "labels", isempty)
-        insertattifnot!(atts, AG.getunittype(a), "units", isempty)
-        insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
-        insertattifnot!(atts, AG.getscale(a), "scale_factor", x->isequal(x, one(x)))
-        return atts
-    end
+end
+function getbandattributes(a::AbstractRasterBand)
+    atts = Dict{String,Any}()
+    catdict = Dict((i - 1) => v for (i, v) in enumerate(AG.getcategorynames(a)))
+    insertattifnot!(atts, AG.getnodatavalue(a), "missing_value", isnothing)
+    insertattifnot!(atts, catdict, "labels", isempty)
+    insertattifnot!(atts, AG.getunittype(a), "units", isempty)
+    insertattifnot!(atts, AG.getoffset(a), "add_offset", iszero)
+    insertattifnot!(atts, AG.getscale(a), "scale_factor", x -> isequal(x, one(x)))
+    return atts
+end
 end

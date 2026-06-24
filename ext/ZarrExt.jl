@@ -1,6 +1,6 @@
 module ZarrExt
 using YAXArrayBase
-using Zarr: ZArray, ZGroup, zgroup, zcreate, to_zarrtype, zopen, Compressor, ZipStore
+using Zarr: ZArray, ZGroup, zgroup, zcreate, to_zarrtype, zopen, Compressor, ZipStore, NoCompressor, MetadataV2, MetadataV3
 import DiskArrays: AbstractDiskArray, DiskArrays, Unchunked, Chunked, GridChunks
 using ZipArchives: ZipReader
 import YAXArrayBase: YAXArrayBase as YAB
@@ -50,7 +50,7 @@ Base.haskey(ds::ZarrDataset, k) = haskey(ds.g, k)
 
 function YAB.add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, fill_as_missing=false, kwargs...)
-  attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(dimnames))))
+  attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(String, dimnames))))
   fv = get(attr, "_FillValue", get(attr, "missing_value", YAB.defaultfillval(T)))
   attr3 = filter(attr2) do (k, v)
     !isa(v, AbstractFloat) || !isnan(v)
@@ -75,7 +75,9 @@ YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(p
 YAB.allow_parallel_write(::ZarrDataset) = true
 YAB.allow_missings(::ZarrDataset) = false
 YAB.to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g; kwargs...)
-YAB.iscompressed(a::ZArray{<:Any,<:Any,<:Compressor}) = true
+YAB.iscompressed(a::ZArray) = _iscompressed(a.metadata)
+_iscompressed(m::MetadataV3) = !isempty(m.codec.byte_to_byte)
+_iscompressed(m::MetadataV2) = !isa(m.compressor, NoCompressor)
 
 
 #Add ability to read zipped zarrs
