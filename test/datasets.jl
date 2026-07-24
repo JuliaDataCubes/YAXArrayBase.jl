@@ -3,7 +3,7 @@ using YAXArrayBase, Test
   @test_throws "No backend found." YAXArrayBase.backendfrompath("test.zarr")
 end
 
-using NetCDF, Zarr
+using NetCDF, Zarr, NCDatasets
 
 using Pkg.Artifacts
 import Downloads
@@ -61,6 +61,23 @@ YAXArrayBase.open_dataset_handle(ds_nc2) do ds_nc
   @test allow_parallel_write(ds_nc) == false
   @test allow_missings(ds_nc) == false
 end
+end
+
+@testset "Reading NCDatasets" begin
+  ds_nc = YAXArrayBase.to_dataset(p2, driver=:ncdatasets)
+  vn = get_varnames(ds_nc)
+  @test sort(vn) == ["area", "lat", "lat_bnds", "lon", "lon_bnds", "msk_rgn",
+   "plev", "pr", "tas", "time", "time_bnds", "ua"]
+  @test get_var_dims(ds_nc, "tas") == ["lon", "lat", "time"]
+  @test get_var_dims(ds_nc, "area") == ["lon", "lat"]
+  @test get_var_dims(ds_nc, "time") == ["time"]
+  @test get_var_dims(ds_nc, "time_bnds") == ["bnds", "time"]
+  @test get_var_attrs(ds_nc,"tas")["long_name"] == "air_temperature"
+  h = get_var_handle(ds_nc, "tas")
+  @test !YAXArrayBase.iscompressed(h)
+  @test all(isapprox.(h[1:2,1:2], [215.893 217.168; 215.805 217.03]))
+  @test allow_parallel_write(ds_nc) == false
+  @test allow_missings(ds_nc) == true
 end
 
 @testset "Reading Zarr" begin
@@ -134,6 +151,10 @@ end
 
 @testset "Writing NetCDF" begin
   test_write(YAXArrayBase.backendlist[:netcdf])
+end
+
+@testset "Writing NCDatasets" begin
+  test_write(YAXArrayBase.backendlist[:ncdatasets])
 end
 
 @testset "Writing Zarr" begin
