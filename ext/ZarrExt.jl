@@ -1,6 +1,6 @@
 module ZarrExt
 using YAXArrayBase
-using Zarr: ZArray, ZGroup, zgroup, zcreate, to_zarrtype, zopen, Compressor, ZipStore, NoCompressor, MetadataV2, MetadataV3
+using Zarr: Zarr, ZArray, ZGroup, zgroup, zcreate, zarr_format, to_zarrtype, zopen, Compressor, ZipStore, NoCompressor, MetadataV2, MetadataV3
 import DiskArrays: AbstractDiskArray, DiskArrays, Unchunked, Chunked, GridChunks
 using ZipArchives: ZipReader
 import YAXArrayBase: YAXArrayBase as YAB
@@ -27,7 +27,14 @@ function ZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
   ZarrDataset(zopen(store, mode, fill_as_missing=false, path=path))
 end
 
-YAB.get_var_dims(ds::ZarrDataset, name) = reverse(ds[name].attrs["_ARRAY_DIMENSIONS"])
+function YAB.get_var_dims(ds::ZarrDataset, name)
+  array = ds[name]
+  if Zarr.ZarrCore.zarr_format(array) isa Zarr.ZarrCore.ZarrFormat{2}
+    reverse(array.attrs["_ARRAY_DIMENSIONS"])
+  elseif Zarr.ZarrCore.zarr_format(array) isa Zarr.ZarrCore.ZarrFormat{3}
+    array.attrs
+  end
+end
 YAB.get_varnames(ds::ZarrDataset) = collect(keys(ds.g.arrays))
 function YAB.get_var_attrs(ds::ZarrDataset, name)
   #We add the fill value to the attributes to be consistent with NetCDF
@@ -73,10 +80,10 @@ YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(p
 
 YAB.allow_parallel_write(::ZarrDataset) = true
 YAB.allow_missings(::ZarrDataset) = false
-YAB.to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g; kwargs...)
+YAB.to_dataset(g::ZGroup; driver=:zarr, kwargs...) = (YAB.backendfrompath(""; driver))(g; kwargs...)
 YAB.iscompressed(a::ZArray) = _iscompressed(a.metadata)
-_iscompressed(m::MetadataV3) = !isempty(m.codec.byte_to_byte)
-_iscompressed(m::MetadataV2) = !isa(m.compressor, NoCompressor)
+_iscompressed(m::Zarr.ZarrCore.MetadataV3) = !isempty(m.codec.byte_to_byte)
+_iscompressed(m::Zarr.ZarrCore.MetadataV2) = !isa(m.compressor, NoCompressor)
 
 
 #Add ability to read zipped zarrs
