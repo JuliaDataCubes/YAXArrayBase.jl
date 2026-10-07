@@ -1,6 +1,7 @@
 module ZarrExt
 using YAXArrayBase
-using Zarr: ZArray, ZGroup, zgroup, zcreate, to_zarrtype, zopen, Compressor, ZipStore, NoCompressor, MetadataV2, MetadataV3
+using Zarr: ZArray, ZGroup, zgroup, zcreate, zopen, Compressor, ZipStore, NoCompressor
+using Zarr.ZarrCore: to_zarrtype, MetadataV2, MetadataV3
 import DiskArrays: AbstractDiskArray, DiskArrays, Unchunked, Chunked, GridChunks
 using ZipArchives: ZipReader
 import YAXArrayBase: YAXArrayBase as YAB
