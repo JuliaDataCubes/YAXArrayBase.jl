@@ -140,9 +140,9 @@ end
   @test allow_parallel_write(ds_tif) == false
   @test allow_missings(ds_tif) == true
 end
-function test_write(T)
+function test_write(T; kwargs...)
   p = tempname()
-  ds = create_empty(T, p)
+  ds = create_empty(T, p; kwargs...)
   add_var(ds, 0.5:1:9.5, "lon", ("lon",), Dict("units"=>"degrees_east"))
   add_var(ds, 20:-1.0:1, "lat", ("lat",), Dict("units"=>"degrees_north"))
   v = add_var(ds, Float32, "tas", (10,20), ("lon", "lat"), Dict{String,Any}("units"=>"Celsius"))
@@ -173,6 +173,54 @@ end
   test_write(YAXArrayBase.backendlist[:netcdf])
 end
 
-@testset "Writing Zarr" begin
-  test_write(YAXArrayBase.backendlist[:zarr])
+@testset "Writing Zarr v$zarr_format" for zarr_format in (2, 3)
+  test_write(YAXArrayBase.backendlist[:zarr]; zarr_format)
+end
+
+import JSON
+@testset "create_dataset Zarr v$zarr_format" for zarr_format in (2, 3)
+  ZD = YAXArrayBase.backendlist[:zarr]
+  path = tempname() * ".zarr"
+  ds = YAXArrayBase.create_dataset(ZD, path, Dict("title" => "test"),
+    ["lon", "lat"], [0.5:1:2.5, 10.0:-1:7], [Dict("units" => "degrees_east"), Dict("units" => "degrees_north")],
+    [Float32, Int], ["tas", "count"], [["lon", "lat"], ["lat"]], [Dict{String,Any}(), Dict{String,Any}()],
+    [(3, 4), (4,)]; zarr_format)
+  add_var(ds, fill(1), "scalar", (), Dict{String,Any}())
+  if zarr_format == 3
+    nodes = [joinpath(r, f) for (r, _, fs) in walkdir(path) for f in fs if f == "zarr.json"]
+    @test length(nodes) == 6
+    for n in nodes
+      j = JSON.parsefile(n)
+      @test j["zarr_format"] == 3
+      if j["node_type"] == "array"
+        @test haskey(j, "dimension_names")
+        @test !haskey(get(j, "attributes", Dict()), "_ARRAY_DIMENSIONS")
+      end
+    end
+    @test !any(f -> f in (".zgroup", ".zarray", ".zattrs"), (f for (_, _, fs) in walkdir(path) for f in fs))
+  else
+    @test isfile(joinpath(path, ".zgroup"))
+    @test !isfile(joinpath(path, "zarr.json"))
+    @test ds["tas"].attrs["_ARRAY_DIMENSIONS"] == ["lat", "lon"]
+    @test ZarrCore.dimension_names(ds["tas"]) === nothing
+  end
+  ds2 = to_dataset(path)
+  @test get_var_dims(ds2, "tas") == ["lon", "lat"]
+  @test get_var_dims(ds2, "count") == ["lat"]
+  @test get_var_dims(ds2, "lon") == ["lon"]
+  @test get_var_dims(ds2, "scalar") == []
+  @test YAXArrayBase.get_global_attrs(ds2)["title"] == "test"
+  @test_throws ArgumentError add_var(ds, Float32, "bad", (3,), ("lon",), Dict{String,Any}(); zarr_format=5 - zarr_format)
+end
+
+@testset "Reading Zarr v3 with only dimension_names" begin
+  path = tempname() * ".zarr"
+  g = zgroup(ZarrCore.storefromstring(path, true)..., 3)
+  zcreate(Float32, g, "a", 3, 4; dimension_names=("x", "y"))
+  zcreate(Float32, g, "partial", 3, 4; dimension_names=("x", nothing), attrs=Dict("_ARRAY_DIMENSIONS" => ["y", "x"]))
+  zcreate(Float32, g, "unnamed", 3, 4)
+  ds = to_dataset(path)
+  @test get_var_dims(ds, "a") == ["x", "y"]
+  @test get_var_dims(ds, "partial") == ["x", "y"]
+  @test_throws ArgumentError get_var_dims(ds, "unnamed")
 end

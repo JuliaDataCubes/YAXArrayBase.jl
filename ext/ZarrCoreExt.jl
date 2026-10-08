@@ -25,7 +25,16 @@ function ZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
   ZarrDataset(zopen(store, mode, fill_as_missing=false, path=path))
 end
 
-YAB.get_var_dims(ds::ZarrDataset, name) = reverse(ds[name].attrs["_ARRAY_DIMENSIONS"])
+function YAB.get_var_dims(ds::ZarrDataset, name)
+  a = ds[name]
+  # Zarr v3 stores dimension names in the array metadata, already in Julia order
+  dn = ZarrCore.dimension_names(a)
+  if dn !== nothing && all(!isnothing, dn)
+    return collect(String, dn)
+  end
+  haskey(a.attrs, "_ARRAY_DIMENSIONS") || throw(ArgumentError("Zarr array $name has no dimension names"))
+  reverse(a.attrs["_ARRAY_DIMENSIONS"])
+end
 YAB.get_varnames(ds::ZarrDataset) = collect(keys(ds.g.arrays))
 function YAB.get_var_attrs(ds::ZarrDataset, name)
   #We add the fill value to the attributes to be consistent with NetCDF
@@ -46,11 +55,20 @@ Base.haskey(ds::ZarrDataset, k) = haskey(ds.g, k)
 # end
 
 function YAB.add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
-  chunksize=s, fill_as_missing=false, kwargs...)
+  chunksize=s, fill_as_missing=false, zarr_format=nothing, kwargs...)
+  # The format is set by the group in create_empty
+  if zarr_format !== nothing && zarr_format != _zarr_format(p)
+    throw(ArgumentError("Can not create a Zarr v$zarr_format array in a Zarr v$(_zarr_format(p)) group"))
+  end
   if !haskey(kwargs, :compressor) && ZarrCore.default_compressor() isa NoCompressor
     @info "No Zarr compressor package is loaded, so data will be written uncompressed. Load e.g. ZarrBlosc or Zarr to enable compression." maxlog = 1
   end
-  attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(String, dimnames))))
+  if _zarr_format(p) == 2
+    attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(String, dimnames))))
+  else
+    attr2 = attr
+    kwargs = (; kwargs..., dimension_names=Tuple(collect(String, dimnames)))
+  end
   fv = get(attr, "_FillValue", get(attr, "missing_value", YAB.defaultfillval(T)))
   attr3 = filter(attr2) do (k, v)
     !isa(v, AbstractFloat) || !isnan(v)
@@ -69,7 +87,10 @@ function YAB.add_var(p::ZarrDataset, a::AbstractArray, varname, dimnames, attr;
   a
 end
 
-YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(path, attrs=gatts))
+YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict(); zarr_format=2, kwargs...) =
+  ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., zarr_format; attrs=gatts))
+_zarr_format(ds::ZarrDataset) = _zarr_format(ds.g.zarr_format)
+_zarr_format(::ZarrCore.ZarrFormat{N}) where N = N
 
 
 

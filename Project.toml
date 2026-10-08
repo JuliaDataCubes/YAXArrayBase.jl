@@ -17,7 +17,7 @@ AxisKeys = "0.2"
 DimensionalData = "0.27, 0.28, 0.29, 0.30"
 DiskArrays = "0.4"
 NetCDF = "0.11, 0.12"
-ZarrCore = "0.11"
+ZarrCore = "0.11.1"
 ZarrZip = "0.11"
 
 
