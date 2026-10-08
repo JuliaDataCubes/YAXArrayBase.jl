@@ -240,8 +240,13 @@ end
   zcreate(Float32, g, "a", 3, 4; dimension_names=("x", "y"))
   zcreate(Float32, g, "partial", 3, 4; dimension_names=("x", nothing), attrs=Dict("_ARRAY_DIMENSIONS" => ["y", "x"]))
   zcreate(Float32, g, "unnamed", 3, 4)
+  scalar = zcreate(Float64, g, "scalar")
+  scalar[] = 2.5
   ds = to_dataset(path)
   @test get_var_dims(ds, "a") == ["x", "y"]
   @test get_var_dims(ds, "partial") == ["x", "y"]
   @test_throws ArgumentError get_var_dims(ds, "unnamed")
+  @test !occursin("dimension_names", read(joinpath(path, "scalar", "zarr.json"), String))
+  @test get_var_dims(ds, "scalar") == []
+  @test get_var_handle(ds, "scalar")[] == 2.5
 end

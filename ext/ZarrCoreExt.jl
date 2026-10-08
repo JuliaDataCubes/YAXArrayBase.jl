@@ -32,8 +32,12 @@ function YAB.get_var_dims(ds::ZarrDataset, name)
   if dn !== nothing && all(!isnothing, dn)
     return collect(String, dn)
   end
-  haskey(a.attrs, "_ARRAY_DIMENSIONS") || throw(ArgumentError("Zarr array $name has no dimension names"))
-  reverse(a.attrs["_ARRAY_DIMENSIONS"])
+  if haskey(a.attrs, "_ARRAY_DIMENSIONS")
+    return reverse(a.attrs["_ARRAY_DIMENSIONS"])
+  end
+  # Scalars have no dimensions to name, Zarr v3 allows omitting dimension_names for them
+  ndims(a) == 0 && return String[]
+  throw(ArgumentError("Zarr array $name has no dimension names"))
 end
 YAB.get_varnames(ds::ZarrDataset) = collect(keys(ds.g.arrays))
 function YAB.get_var_attrs(ds::ZarrDataset, name)
