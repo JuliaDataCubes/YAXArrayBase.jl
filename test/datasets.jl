@@ -3,7 +3,7 @@ using YAXArrayBase, Test
   @test_throws "No backend found." YAXArrayBase.backendfrompath("test.zarr")
 end
 
-using NetCDF, Zarr
+using NetCDF, ZarrCore
 
 using Pkg.Artifacts
 import Downloads
@@ -61,6 +61,43 @@ YAXArrayBase.open_dataset_handle(ds_nc2) do ds_nc
   @test allow_parallel_write(ds_nc) == false
   @test allow_missings(ds_nc) == false
 end
+end
+
+@testset "Zarr with bare ZarrCore" begin
+  path = tempname() * ".zarr"
+  ds = create_empty(YAXArrayBase.backendlist[:zarr], path)
+  v = @test_logs (:info, r"uncompressed") add_var(ds, Float32, "tas", (3, 4), ("lon", "lat"), Dict{String,Any}())
+  v[:, :] = reshape(1:12, 3, 4)
+  ds_loaded = to_dataset(path)
+  @test get_var_dims(ds_loaded, "tas") == ["lon", "lat"]
+  h = get_var_handle(ds_loaded, "tas")
+  @test h[:, :] == reshape(1:12, 3, 4)
+  @test !YAXArrayBase.iscompressed(h)
+  @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4, zarr_format=3))
+  @test_throws "ZarrZip" to_dataset(tempname() * ".zarr.zip")
+end
+
+using ZarrHTTP, ZarrBlosc, ZarrZip
+
+@testset "Zarr iscompressed" begin
+  for zarr_format in (2, 3)
+    @test YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; zarr_format))
+    @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; zarr_format, compressor=ZarrCore.NoCompressor()))
+  end
+end
+
+@testset "Reading zipped Zarr" begin
+  path = tempname() * ".zarr"
+  ds = create_empty(YAXArrayBase.backendlist[:zarr], path)
+  add_var(ds, reshape(1.0:12.0, 3, 4), "tas", ("lon", "lat"), Dict{String,Any}("units" => "K"))
+  zippath = path * ".zip"
+  open(io -> ZarrZip.writezip(io, ds.g), zippath, "w")
+  ds_zip = to_dataset(zippath)
+  @test ds_zip isa YAXArrayBase.backendlist[:zarr]
+  @test get_varnames(ds_zip) == ["tas"]
+  @test get_var_dims(ds_zip, "tas") == ["lon", "lat"]
+  @test get_var_attrs(ds_zip, "tas")["units"] == "K"
+  @test get_var_handle(ds_zip, "tas")[:, :] == reshape(1.0:12.0, 3, 4)
 end
 
 @testset "Reading Zarr" begin

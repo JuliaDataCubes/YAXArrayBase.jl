@@ -81,6 +81,14 @@ backendlist = OrderedDict{Symbol, Any}(
 
 backendregex = Pair[]
 
+"""
+    zarr_zipstore(path)
+
+Open the zipped Zarr store at `path`. Used by the Zarr backend and implemented
+when `ZarrZip` is loaded.
+"""
+zarr_zipstore(path) = throw(ArgumentError("Reading zipped Zarr stores requires ZarrZip. Run `using ZarrZip` (or `using Zarr`) first."))
+
 function backendfrompath(g::String; driver = :all)
   if driver == :all
     isempty(backendregex) && throw("No backend found. Load a backend by using the corresponding package.")

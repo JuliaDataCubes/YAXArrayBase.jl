@@ -1,8 +1,6 @@
-module ZarrExt
+module ZarrCoreExt
 using YAXArrayBase
-using Zarr: ZArray, ZGroup, zgroup, zcreate, to_zarrtype, zopen, Compressor, ZipStore, NoCompressor, MetadataV2, MetadataV3
-import DiskArrays: AbstractDiskArray, DiskArrays, Unchunked, Chunked, GridChunks
-using ZipArchives: ZipReader
+using ZarrCore: ZarrCore, ZArray, ZGroup, zgroup, zcreate, zopen, NoCompressor, CRC32cV3Codec
 import YAXArrayBase: YAXArrayBase as YAB
 export ZarrDataset
 
@@ -20,7 +18,7 @@ function ZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
     return ZarrDataset(g)
   end
   store = if endswith(g, "zip")
-    ZipStore(ZipReader(SimpleFileDiskArray(g)))
+    YAB.zarr_zipstore(g)
   else
     g
   end
@@ -49,6 +47,9 @@ Base.haskey(ds::ZarrDataset, k) = haskey(ds.g, k)
 
 function YAB.add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
   chunksize=s, fill_as_missing=false, kwargs...)
+  if !haskey(kwargs, :compressor) && ZarrCore.default_compressor() isa NoCompressor
+    @info "No Zarr compressor package is loaded, so data will be written uncompressed. Load e.g. ZarrBlosc or Zarr to enable compression." maxlog = 1
+  end
   attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(String, dimnames))))
   fv = get(attr, "_FillValue", get(attr, "missing_value", YAB.defaultfillval(T)))
   attr3 = filter(attr2) do (k, v)
@@ -61,7 +62,8 @@ end
 #Special case for init with Arrays
 function YAB.add_var(p::ZarrDataset, a::AbstractArray, varname, dimnames, attr;
   kwargs...)
-  T = to_zarrtype(a)
+  # to_zarrtype is not public in ZarrCore
+  T = ZarrCore.to_zarrtype(a)
   b = add_var(p, T, varname, size(a), dimnames, attr; kwargs...)
   b .= a
   a
@@ -74,40 +76,10 @@ YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict()) = ZarrDataset(zgroup(p
 YAB.allow_parallel_write(::ZarrDataset) = true
 YAB.allow_missings(::ZarrDataset) = false
 YAB.to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g; kwargs...)
-YAB.iscompressed(a::ZArray) = _iscompressed(a.metadata)
-_iscompressed(m::MetadataV3) = !isempty(m.codec.byte_to_byte)
-_iscompressed(m::MetadataV2) = !isa(m.compressor, NoCompressor)
-
-
-#Add ability to read zipped zarrs
-
-
-struct SimpleFileDiskArray{C<:Union{Int,Nothing}} <: AbstractDiskArray{UInt8,1}
-  file::String
-  s::Int
-  chunksize::C
-end
-Base.size(s::SimpleFileDiskArray) = (s.s,)
-function SimpleFileDiskArray(filename; chunksize=nothing)
-  isfile(filename) || throw(ArgumentError("File $filename does not exist"))
-  s = filesize(filename)
-  SimpleFileDiskArray(filename, s, chunksize)
-end
-function DiskArrays.readblock!(a::SimpleFileDiskArray, aout, i::AbstractUnitRange)
-  open(a.file) do f
-    seek(f, first(i) - 1)
-    read!(f, aout)
-  end
-end
-DiskArrays.haschunks(a::SimpleFileDiskArray) = a.chunksize === nothing ? Unchunked() : Chunked()
-function DiskArrays.eachchunk(a::SimpleFileDiskArray)
-  if a.chunksize === nothing
-    DiskArrays.estimate_chunksize(a)
-  else
-    GridChunks((a.s,), (a.chunksize,))
-  end
-end
-
-
+# get_pipeline, V2Pipeline and V3Pipeline are not public in ZarrCore
+YAB.iscompressed(a::ZArray) = _iscompressed(ZarrCore.get_pipeline(a.metadata))
+_iscompressed(p::ZarrCore.V2Pipeline) = !isa(p.compressor, NoCompressor)
+# Checksum codecs are bytes-to-bytes codecs too, but do not compress
+_iscompressed(p::ZarrCore.V3Pipeline) = any(c -> !isa(c, CRC32cV3Codec), p.bytes_bytes)
 
 end
