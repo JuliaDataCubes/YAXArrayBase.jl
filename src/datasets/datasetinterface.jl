@@ -63,8 +63,11 @@ end
 function create_dataset(T::Type, path, gatts, dimnames, dimvals, dimattrs, vartypes, varnames, vardims, varattrs, varchunks; kwargs...)
   ds = create_empty(T, path, gatts; kwargs...)
   axlengths = Dict{String, Int}()
+  # Coordinates share the compression settings (Zarr compressor, NetCDF compress),
+  # other options like filters may be type specific
+  coordkwargs = (; (k => v for (k, v) in pairs(kwargs) if k in (:compressor, :compress))...)
   for (dname, dval, dattr) in zip(dimnames, dimvals, dimattrs)
-    add_var(ds, dval, dname, (dname,), dattr)
+    add_var(ds, dval, dname, (dname,), dattr; coordkwargs...)
     axlengths[dname] = length(dval)
   end
   for (T, vn, vd, va, vc) in zip(vartypes, varnames, vardims, varattrs, varchunks)
