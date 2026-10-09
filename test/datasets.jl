@@ -3,7 +3,7 @@ using YAXArrayBase, Test
   @test_throws "No backend found." YAXArrayBase.backendfrompath("test.zarr")
 end
 
-using NetCDF, Zarr
+using NetCDF, ZarrCore
 
 using Pkg.Artifacts
 import Downloads
@@ -63,6 +63,43 @@ YAXArrayBase.open_dataset_handle(ds_nc2) do ds_nc
 end
 end
 
+@testset "Zarr with bare ZarrCore" begin
+  path = tempname() * ".zarr"
+  ds = create_empty(YAXArrayBase.backendlist[:zarr], path)
+  v = @test_logs (:info, r"uncompressed") add_var(ds, Float32, "tas", (3, 4), ("lon", "lat"), Dict{String,Any}())
+  v[:, :] = reshape(1:12, 3, 4)
+  ds_loaded = to_dataset(path)
+  @test get_var_dims(ds_loaded, "tas") == ["lon", "lat"]
+  h = get_var_handle(ds_loaded, "tas")
+  @test h[:, :] == reshape(1:12, 3, 4)
+  @test !YAXArrayBase.iscompressed(h)
+  @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4, format=3))
+  @test_throws "ZarrZip" to_dataset(tempname() * ".zarr.zip")
+end
+
+using ZarrHTTP, ZarrBlosc, ZarrZip
+
+@testset "Zarr iscompressed" begin
+  for format in (2, 3)
+    @test YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; format))
+    @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; format, compressor=ZarrCore.NoCompressor()))
+  end
+end
+
+@testset "Reading zipped Zarr" begin
+  path = tempname() * ".zarr"
+  ds = create_empty(YAXArrayBase.backendlist[:zarr], path)
+  add_var(ds, reshape(1.0:12.0, 3, 4), "tas", ("lon", "lat"), Dict{String,Any}("units" => "K"))
+  zippath = path * ".zip"
+  open(io -> ZarrZip.writezip(io, ds.g), zippath, "w")
+  ds_zip = to_dataset(zippath)
+  @test ds_zip isa YAXArrayBase.backendlist[:zarr]
+  @test get_varnames(ds_zip) == ["tas"]
+  @test get_var_dims(ds_zip, "tas") == ["lon", "lat"]
+  @test get_var_attrs(ds_zip, "tas")["units"] == "K"
+  @test get_var_handle(ds_zip, "tas")[:, :] == reshape(1.0:12.0, 3, 4)
+end
+
 @testset "Reading Zarr" begin
   p = "https://s3.bgc-jena.mpg.de:9000/esdl-esdc-v3.0.2/esdc-16d-2.5deg-46x72x1440-3.0.2.zarr"
   for ds_zarr in [to_dataset(p,driver=:zarr), to_dataset(zopen(p))]
@@ -103,9 +140,9 @@ end
   @test allow_parallel_write(ds_tif) == false
   @test allow_missings(ds_tif) == true
 end
-function test_write(T)
+function test_write(T; kwargs...)
   p = tempname()
-  ds = create_empty(T, p)
+  ds = create_empty(T, p; kwargs...)
   add_var(ds, 0.5:1:9.5, "lon", ("lon",), Dict("units"=>"degrees_east"))
   add_var(ds, 20:-1.0:1, "lat", ("lat",), Dict("units"=>"degrees_north"))
   v = add_var(ds, Float32, "tas", (10,20), ("lon", "lat"), Dict{String,Any}("units"=>"Celsius"))
@@ -136,6 +173,80 @@ end
   test_write(YAXArrayBase.backendlist[:netcdf])
 end
 
-@testset "Writing Zarr" begin
-  test_write(YAXArrayBase.backendlist[:zarr])
+@testset "create_dataset NetCDF compress" begin
+  ND = YAXArrayBase.backendlist[:netcdf]
+  for (compress, compressed) in ((-1, false), (5, true))
+    path = tempname() * ".nc"
+    YAXArrayBase.create_dataset(ND, path, Dict(), ["lon"], [0.5:1:2.5], [Dict()],
+      [Float32], ["tas"], [["lon"]], [Dict{String,Any}()], [(3,)]; compress)
+    ds = to_dataset(path, driver=:netcdf)
+    @test YAXArrayBase.iscompressed(get_var_handle(ds, "tas")) == compressed
+    @test YAXArrayBase.iscompressed(get_var_handle(ds, "lon")) == compressed
+  end
+end
+
+@testset "Writing Zarr v$format" for format in (2, 3)
+  test_write(YAXArrayBase.backendlist[:zarr]; format)
+end
+
+import JSON
+@testset "create_dataset Zarr v$format" for format in (2, 3)
+  ZD = YAXArrayBase.backendlist[:zarr]
+  path = tempname() * ".zarr"
+  ds = YAXArrayBase.create_dataset(ZD, path, Dict("title" => "test"),
+    ["lon", "lat"], [0.5:1:2.5, 10.0:-1:7], [Dict("units" => "degrees_east"), Dict("units" => "degrees_north")],
+    [Float32, Int], ["tas", "count"], [["lon", "lat"], ["lat"]], [Dict{String,Any}(), Dict{String,Any}()],
+    [(3, 4), (4,)]; format)
+  add_var(ds, fill(1), "scalar", (), Dict{String,Any}())
+  if format == 3
+    nodes = [joinpath(r, f) for (r, _, fs) in walkdir(path) for f in fs if f == "zarr.json"]
+    @test length(nodes) == 6
+    for n in nodes
+      j = JSON.parsefile(n)
+      @test j["format"] == 3
+      if j["node_type"] == "array"
+        @test haskey(j, "dimension_names")
+        @test !haskey(get(j, "attributes", Dict()), "_ARRAY_DIMENSIONS")
+      end
+    end
+    @test !any(f -> f in (".zgroup", ".zarray", ".zattrs"), (f for (_, _, fs) in walkdir(path) for f in fs))
+  else
+    @test isfile(joinpath(path, ".zgroup"))
+    @test !isfile(joinpath(path, "zarr.json"))
+    @test ds["tas"].attrs["_ARRAY_DIMENSIONS"] == ["lat", "lon"]
+    @test ZarrCore.dimension_names(ds["tas"]) === nothing
+  end
+  ds2 = to_dataset(path)
+  @test get_var_dims(ds2, "tas") == ["lon", "lat"]
+  @test get_var_dims(ds2, "count") == ["lat"]
+  @test get_var_dims(ds2, "lon") == ["lon"]
+  @test get_var_dims(ds2, "scalar") == []
+  @test YAXArrayBase.get_global_attrs(ds2)["title"] == "test"
+  @test_throws ArgumentError add_var(ds, Float32, "bad", (3,), ("lon",), Dict{String,Any}(); format=5 - format)
+  @test all(n -> YAXArrayBase.iscompressed(ds2[n]), ["tas", "lon", "lat"])
+
+  # The compressor also applies to the coordinate arrays
+  path = tempname() * ".zarr"
+  ds = YAXArrayBase.create_dataset(ZD, path, Dict(), ["lon"], [0.5:1:2.5], [Dict()],
+    [Float32], ["tas"], [["lon"]], [Dict{String,Any}()], [(3,)];
+    format, compressor=ZarrCore.NoCompressor())
+  @test !YAXArrayBase.iscompressed(ds["tas"])
+  @test !YAXArrayBase.iscompressed(ds["lon"])
+end
+
+@testset "Reading Zarr v3 with only dimension_names" begin
+  path = tempname() * ".zarr"
+  g = zgroup(ZarrCore.storefromstring(path, true)..., 3)
+  zcreate(Float32, g, "a", 3, 4; dimension_names=("x", "y"))
+  zcreate(Float32, g, "partial", 3, 4; dimension_names=("x", nothing), attrs=Dict("_ARRAY_DIMENSIONS" => ["y", "x"]))
+  zcreate(Float32, g, "unnamed", 3, 4)
+  scalar = zcreate(Float64, g, "scalar")
+  scalar[] = 2.5
+  ds = to_dataset(path)
+  @test get_var_dims(ds, "a") == ["x", "y"]
+  @test get_var_dims(ds, "partial") == ["x", "y"]
+  @test_throws ArgumentError get_var_dims(ds, "unnamed")
+  @test !occursin("dimension_names", read(joinpath(path, "scalar", "zarr.json"), String))
+  @test get_var_dims(ds, "scalar") == []
+  @test get_var_handle(ds, "scalar")[] == 2.5
 end
