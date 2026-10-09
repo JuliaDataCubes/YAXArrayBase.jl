@@ -53,6 +53,14 @@ end
     @test dimvals(d,1) == 0.5:1.0:2.5
     @test dimvals(d,2) == 1.5:0.5:3.0
     @test getattributes(d) == Dict{String,Any}("a1"=>5, "a2"=>"att")
+    # metadata is normalised to a Dict with String keys, whatever DimensionalData holds
+    dd = DimArray(rand(2, 3), (X(1:2), Y(1:3)))
+    @test getattributes(dd) == Dict{String,Any}() && getattributes(dd) isa Dict{String,Any}
+    dd = DimArray(rand(2, 3), (X(1:2), Y(1:3)); metadata=Dict(:units => "K"))
+    @test getattributes(dd) == Dict{String,Any}("units" => "K") && getattributes(dd) isa Dict{String,Any}
+    dd = DimArray(rand(2, 3), (X(1:2), Y(1:3)); metadata=DimensionalData.Metadata(Dict("a" => 1)))
+    @test getattributes(dd) == Dict{String,Any}("a" => 1)
+    @test yaxconvert(DimArray, M()) isa DimArray
 end
 
 @testitem "ArchGDAL" begin
