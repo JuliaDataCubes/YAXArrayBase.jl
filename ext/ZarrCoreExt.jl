@@ -94,7 +94,7 @@ end
 
 YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict(); format=2, kwargs...) =
   ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., format; attrs=gatts))
-zarr_format(ds::ZarrDataset) = zarr_format(ds.g)
+zarr_format(ds::ZarrDataset) = zarr_format(ds.g.metadata)
 
 
 
