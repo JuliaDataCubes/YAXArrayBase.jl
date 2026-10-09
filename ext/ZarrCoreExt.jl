@@ -1,7 +1,8 @@
 module ZarrCoreExt
 using YAXArrayBase
-using ZarrCore: ZarrCore, ZArray, ZGroup, zgroup, zcreate, zopen, NoCompressor, CRC32cV3Codec, zarr_format
+using ZarrCore: ZarrCore, ZArray, ZGroup, zgroup, zcreate, zopen, NoCompressor, CRC32cV3Codec
 import YAXArrayBase: YAXArrayBase as YAB
+import ZarrCore: zarr_format
 export ZarrDataset
 
 function __init__()
