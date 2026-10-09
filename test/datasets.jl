@@ -73,16 +73,16 @@ end
   h = get_var_handle(ds_loaded, "tas")
   @test h[:, :] == reshape(1:12, 3, 4)
   @test !YAXArrayBase.iscompressed(h)
-  @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4, zarr_format=3))
+  @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4, format=3))
   @test_throws "ZarrZip" to_dataset(tempname() * ".zarr.zip")
 end
 
 using ZarrHTTP, ZarrBlosc, ZarrZip
 
 @testset "Zarr iscompressed" begin
-  for zarr_format in (2, 3)
-    @test YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; zarr_format))
-    @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; zarr_format, compressor=ZarrCore.NoCompressor()))
+  for format in (2, 3)
+    @test YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; format))
+    @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; format, compressor=ZarrCore.NoCompressor()))
   end
 end
 
@@ -185,25 +185,25 @@ end
   end
 end
 
-@testset "Writing Zarr v$zarr_format" for zarr_format in (2, 3)
-  test_write(YAXArrayBase.backendlist[:zarr]; zarr_format)
+@testset "Writing Zarr v$format" for format in (2, 3)
+  test_write(YAXArrayBase.backendlist[:zarr]; format)
 end
 
 import JSON
-@testset "create_dataset Zarr v$zarr_format" for zarr_format in (2, 3)
+@testset "create_dataset Zarr v$format" for format in (2, 3)
   ZD = YAXArrayBase.backendlist[:zarr]
   path = tempname() * ".zarr"
   ds = YAXArrayBase.create_dataset(ZD, path, Dict("title" => "test"),
     ["lon", "lat"], [0.5:1:2.5, 10.0:-1:7], [Dict("units" => "degrees_east"), Dict("units" => "degrees_north")],
     [Float32, Int], ["tas", "count"], [["lon", "lat"], ["lat"]], [Dict{String,Any}(), Dict{String,Any}()],
-    [(3, 4), (4,)]; zarr_format)
+    [(3, 4), (4,)]; format)
   add_var(ds, fill(1), "scalar", (), Dict{String,Any}())
-  if zarr_format == 3
+  if format == 3
     nodes = [joinpath(r, f) for (r, _, fs) in walkdir(path) for f in fs if f == "zarr.json"]
     @test length(nodes) == 6
     for n in nodes
       j = JSON.parsefile(n)
-      @test j["zarr_format"] == 3
+      @test j["format"] == 3
       if j["node_type"] == "array"
         @test haskey(j, "dimension_names")
         @test !haskey(get(j, "attributes", Dict()), "_ARRAY_DIMENSIONS")
@@ -222,14 +222,14 @@ import JSON
   @test get_var_dims(ds2, "lon") == ["lon"]
   @test get_var_dims(ds2, "scalar") == []
   @test YAXArrayBase.get_global_attrs(ds2)["title"] == "test"
-  @test_throws ArgumentError add_var(ds, Float32, "bad", (3,), ("lon",), Dict{String,Any}(); zarr_format=5 - zarr_format)
+  @test_throws ArgumentError add_var(ds, Float32, "bad", (3,), ("lon",), Dict{String,Any}(); format=5 - format)
   @test all(n -> YAXArrayBase.iscompressed(ds2[n]), ["tas", "lon", "lat"])
 
   # The compressor also applies to the coordinate arrays
   path = tempname() * ".zarr"
   ds = YAXArrayBase.create_dataset(ZD, path, Dict(), ["lon"], [0.5:1:2.5], [Dict()],
     [Float32], ["tas"], [["lon"]], [Dict{String,Any}()], [(3,)];
-    zarr_format, compressor=ZarrCore.NoCompressor())
+    format, compressor=ZarrCore.NoCompressor())
   @test !YAXArrayBase.iscompressed(ds["tas"])
   @test !YAXArrayBase.iscompressed(ds["lon"])
 end
