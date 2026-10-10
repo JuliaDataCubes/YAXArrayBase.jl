@@ -53,6 +53,15 @@ end
     @test dimvals(d,1) == 0.5:1.0:2.5
     @test dimvals(d,2) == 1.5:0.5:3.0
     @test getattributes(d) == Dict{String,Any}("a1"=>5, "a2"=>"att")
+    # a source without dimension types gives `nothing`, and the target then uses Dim{name}
+    @test dimtype(M(), 1) === nothing
+    @test typeof(dims(d, 1)) <: Dim{:x}
+    # a DimArray source keeps its dimension types through the conversion pipeline
+    DimensionalData.@dim D1
+    dd = DimArray(rand(2, 3), (D1(["a", "b"]), X(1:3)); metadata = Dict{String,Any}())
+    @test dimtype(dd, 1) === D1 && dimtype(dd, 2) === X
+    back = yaxconvert(DimArray, dd)
+    @test typeof(dims(back)) == typeof(dims(dd)) && back == dd
 end
 
 @testitem "ArchGDAL" begin

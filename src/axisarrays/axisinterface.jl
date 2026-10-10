@@ -20,6 +20,16 @@ dimname(::AbstractArray,i) = Symbol("Dim_",i)
 
 # Optional methods
 """
+    dimtype(x, i)
+
+Returns the dimension type of the i-th dimension of the array `x`, for targets that model
+dimensions as types (DimensionalData's `X` and `Ti`, or a user's `@dim D1`), or `nothing`
+when the array has only a name for it, in which case such targets use `Dim{dimname(x, i)}`.
+The fallback returns `nothing`.
+"""
+dimtype(x, i) = nothing
+
+"""
     iscontdim(x, i)
 
 Returns a boolean indicating if the i-th dimension of the array
@@ -78,12 +88,18 @@ Converts an AbstractArray x that implements the interface to type T.
 """
 function yaxconvert(T::Type{<:Any},x)
   data = getdata(x)
-  yaxcreate(T, data, dimnames(x),dimvals.(Ref(x),1:ndims(data)),getattributes(x))
+  n = ndims(data)
+  yaxcreate(T, data, dimnames(x), ntuple(i -> dimtype(x, i), n), dimvals.(Ref(x), 1:n), getattributes(x))
 end
 
 """
     yaxcreate(T::Type,data,dnames,dvals,attributes)
+    yaxcreate(T::Type,data,dnames,dtypes,dvals,attributes)
 
-Creates a new array with the given dimension names, values and attributes.
+Creates a new array with the given dimension names, values and attributes. In the
+six-argument form `dtypes[i]` is `dimtype(x, i)` of the source: a dimension type to
+construct the axis with, or `nothing`. Targets that do not model dimension types need only
+implement the five-argument form; the six-argument default forwards to it.
 """
 function yaxcreate(T,data,dname,dvals,attributes) end
+yaxcreate(T, data, dnames, dtypes, dvals, attributes) = yaxcreate(T, data, dnames, dvals, attributes)
