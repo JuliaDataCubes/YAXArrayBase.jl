@@ -73,7 +73,7 @@ end
   h = get_var_handle(ds_loaded, "tas")
   @test h[:, :] == reshape(1:12, 3, 4)
   @test !YAXArrayBase.iscompressed(h)
-  @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4, format=3))
+  @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; zarr_format=3))
   @test_throws "ZarrZip" to_dataset(tempname() * ".zarr.zip")
 end
 
@@ -81,8 +81,8 @@ using ZarrHTTP, ZarrBlosc, ZarrZip
 
 @testset "Zarr iscompressed" begin
   for format in (2, 3)
-    @test YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; format))
-    @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; format, compressor=ZarrCore.NoCompressor()))
+    @test YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; zarr_format=format))
+    @test !YAXArrayBase.iscompressed(zcreate(Float32, 3, 4; zarr_format=format, compressor=ZarrCore.NoCompressor()))
   end
 end
 
