@@ -203,7 +203,7 @@ import JSON
     @test length(nodes) == 6
     for n in nodes
       j = JSON.parsefile(n)
-      @test j["format"] == 3
+      @test j["zarr_format"] == 3
       if j["node_type"] == "array"
         @test haskey(j, "dimension_names")
         @test !haskey(get(j, "attributes", Dict()), "_ARRAY_DIMENSIONS")
