@@ -2,7 +2,6 @@ module ZarrCoreExt
 using YAXArrayBase
 using ZarrCore: ZarrCore, ZArray, ZGroup, zgroup, zcreate, zopen, NoCompressor, CRC32cV3Codec
 import YAXArrayBase: YAXArrayBase as YAB
-import ZarrCore: zarr_format
 export ZarrDataset
 
 function __init__()
@@ -60,15 +59,16 @@ Base.haskey(ds::ZarrDataset, k) = haskey(ds.g, k)
 # end
 
 function YAB.add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
-  chunksize=s, fill_as_missing=false, format=nothing, kwargs...)
-  # The format is set by the group in create_empty
-  if format !== nothing && format != zarr_format(p)
-    throw(ArgumentError("Can not create a Zarr v$format array in a Zarr v$(zarr_format(p)) group"))
+  chunksize=s, fill_as_missing=false, zarr_format=nothing, kwargs...)
+  # The format is set by the group in create_empty. zarr_format and ZarrFormat are not public in ZarrCore
+  group_format = ZarrCore.zarr_format(p.g)
+  if zarr_format !== nothing && ZarrCore.ZarrFormat(zarr_format) != group_format
+    throw(ArgumentError("Can not create a Zarr v$zarr_format array in a Zarr v$(Int(group_format)) group"))
   end
   if !haskey(kwargs, :compressor) && ZarrCore.default_compressor() isa NoCompressor
     @info "No Zarr compressor package is loaded, so data will be written uncompressed. Load e.g. ZarrBlosc or Zarr to enable compression." maxlog = 1
   end
-  if zarr_format(p) == 2
+  if group_format == ZarrCore.ZarrFormat(2)
     attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(String, dimnames))))
   else
     attr2 = attr
@@ -92,9 +92,8 @@ function YAB.add_var(p::ZarrDataset, a::AbstractArray, varname, dimnames, attr;
   a
 end
 
-YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict(); format=2, kwargs...) =
-  ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., format; attrs=gatts))
-zarr_format(ds::ZarrDataset) = Int(ds.g.zarr_format)
+YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict(); zarr_format=2, kwargs...) =
+  ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., zarr_format; attrs=gatts))
 
 
 

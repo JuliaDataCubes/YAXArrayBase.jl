@@ -102,7 +102,16 @@ end
 
 @testset "Reading Zarr" begin
   p = "https://s3.bgc-jena.mpg.de:9000/esdl-esdc-v3.0.2/esdc-16d-2.5deg-46x72x1440-3.0.2.zarr"
-  for ds_zarr in [to_dataset(p,driver=:zarr), to_dataset(zopen(p))]
+  # The remote server is not always reachable (TLS errors, rate limiting), so only
+  # run the test when ZarrCore itself can open the store.
+  g = try
+    zopen(p)
+  catch e
+    @warn "Skipping remote Zarr test, could not open $p" exception = e
+    nothing
+  end
+  g === nothing && @test_skip "remote Zarr store reachable"
+  for ds_zarr in (g === nothing ? [] : [to_dataset(p, driver=:zarr), to_dataset(g)])
     vn = get_varnames(ds_zarr)
     @test sort(vn) == ["aerosol_optical_thickness_550", "air_temperature_2m", "bare_soil_evaporation", "burnt_area", "cot", "cth", "ctt", "evaporation", "evaporation_era5", "evaporative_stress", "gross_primary_productivity", "interception_loss", "kndvi", "lat", "latent_energy", "lon", "max_air_temperature_2m", "min_air_temperature_2m", "nbar_blue", "nbar_green", "nbar_nir", "nbar_red", "nbar_swir1", "nbar_swir2", "nbar_swir3", "ndvi", "net_ecosystem_exchange", "net_radiation", "nirv", "open_water_evaporation", "potential_evaporation", "precipitation_era5", "radiation_era5", "root_moisture", "sensible_heat", "sif_gome2_jj", "sif_gome2_pk", "sif_gosif", "sif_rtsif", "sm", "snow_sublimation", "surface_moisture", "terrestrial_ecosystem_respiration", "time", "transpiration"]
     @test get_var_dims(ds_zarr, "sm") == ["lon", "lat", "time"]
@@ -185,20 +194,20 @@ end
   end
 end
 
-@testset "Writing Zarr v$format" for format in (2, 3)
-  test_write(YAXArrayBase.backendlist[:zarr]; format)
+@testset "Writing Zarr v$zarr_format" for zarr_format in (2, 3)
+  test_write(YAXArrayBase.backendlist[:zarr]; zarr_format)
 end
 
 import JSON
-@testset "create_dataset Zarr v$format" for format in (2, 3)
+@testset "create_dataset Zarr v$zarr_format" for zarr_format in (2, 3)
   ZD = YAXArrayBase.backendlist[:zarr]
   path = tempname() * ".zarr"
   ds = YAXArrayBase.create_dataset(ZD, path, Dict("title" => "test"),
     ["lon", "lat"], [0.5:1:2.5, 10.0:-1:7], [Dict("units" => "degrees_east"), Dict("units" => "degrees_north")],
     [Float32, Int], ["tas", "count"], [["lon", "lat"], ["lat"]], [Dict{String,Any}(), Dict{String,Any}()],
-    [(3, 4), (4,)]; format)
+    [(3, 4), (4,)]; zarr_format)
   add_var(ds, fill(1), "scalar", (), Dict{String,Any}())
-  if format == 3
+  if zarr_format == 3
     nodes = [joinpath(r, f) for (r, _, fs) in walkdir(path) for f in fs if f == "zarr.json"]
     @test length(nodes) == 6
     for n in nodes
@@ -222,14 +231,14 @@ import JSON
   @test get_var_dims(ds2, "lon") == ["lon"]
   @test get_var_dims(ds2, "scalar") == []
   @test YAXArrayBase.get_global_attrs(ds2)["title"] == "test"
-  @test_throws ArgumentError add_var(ds, Float32, "bad", (3,), ("lon",), Dict{String,Any}(); format=5 - format)
+  @test_throws ArgumentError add_var(ds, Float32, "bad", (3,), ("lon",), Dict{String,Any}(); zarr_format=5 - zarr_format)
   @test all(n -> YAXArrayBase.iscompressed(ds2[n]), ["tas", "lon", "lat"])
 
   # The compressor also applies to the coordinate arrays
   path = tempname() * ".zarr"
   ds = YAXArrayBase.create_dataset(ZD, path, Dict(), ["lon"], [0.5:1:2.5], [Dict()],
     [Float32], ["tas"], [["lon"]], [Dict{String,Any}()], [(3,)];
-    format, compressor=ZarrCore.NoCompressor())
+    zarr_format, compressor=ZarrCore.NoCompressor())
   @test !YAXArrayBase.iscompressed(ds["tas"])
   @test !YAXArrayBase.iscompressed(ds["lon"])
 end

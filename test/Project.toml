@@ -18,4 +18,4 @@ ZarrHTTP = "904a97b2-8abf-4ac8-b211-6540db5c2c8c"
 ZarrZip = "54bcf1c8-e61d-4e4f-b375-463581846cca"
 
 [compat]
-ZarrCore = "0.11.1"
+ZarrCore = "0.11.2"
