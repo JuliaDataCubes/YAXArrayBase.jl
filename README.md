@@ -83,3 +83,13 @@ dimvals(a,1)
 ````
 
 Look at `src/axisinterface` to get a full description of the interface.
+
+## Zarr backend
+
+The Zarr dataset backend is enabled by loading `ZarrCore`. ZarrCore on its own
+only handles local stores and writes uncompressed data. Load the subpackages
+you need, or simply `using Zarr` to get all of them:
+
+- `ZarrHTTP`, `ZarrS3`, `ZarrGCS` for remote stores
+- `ZarrBlosc`, `ZarrZlib`, `ZarrZstd` for compression (`ZarrBlosc` makes Blosc the default compressor)
+- `ZarrZip` for reading `.zarr.zip` files

@@ -70,7 +70,14 @@ function readblock!(v::NetCDFVariable, aout, r::AbstractUnitRange...)
     aout .= aouttemp
   end
 end
-YAB.iscompressed(v::NetCDFVariable) = NetCDF.open(v->v.compress > 0, v.filename, v.varname)
+# NcVar.compress is not read back from the file, so ask the library for the deflate setting
+function YAB.iscompressed(v::NetCDFVariable)
+  NetCDF.open(v.filename, v.varname) do nv
+    shuffle, deflate, level = Ref{Cint}(0), Ref{Cint}(0), Ref{Cint}(0)
+    NetCDF.nc_inq_var_deflate(nv.ncid, nv.varid, shuffle, deflate, level)
+    deflate[] != 0
+  end
+end
 
 Base.size(v::NetCDFVariable) = v.size
 
@@ -95,7 +102,7 @@ function YAB.add_var(p::NetCDFDataset, T::Type, varname, s, dimnames, attr;
   NetCDFVariable{T,length(s)}(p.filename,varname,(s...,))
 end
 
-function YAB.create_empty(::Type{NetCDFDataset}, path, gatts=Dict())
+function YAB.create_empty(::Type{NetCDFDataset}, path, gatts=Dict(); kwargs...)
   NetCDF.create(_->nothing, path, NcVar[], gatts = gatts)
   NetCDFDataset(path)
 end
