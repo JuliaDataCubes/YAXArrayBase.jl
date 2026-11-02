@@ -6,17 +6,21 @@ export ZarrDataset
 
 function __init__()
   @debug "new driver key :zarr, updating backendlist."
-  YAB.backendlist[:zarr] = ZarrDataset
-  push!(YAB.backendregex, r"(.zarr$)|(.zarr/$)|(zarr.zip$)" => ZarrDataset)
+    YAB.backendlist[:zarr] = ZarrDataset{Int(ZarrCore.DV)}
+    YAB.backendlist[:zarr2] = ZarrDataset{2}
+    YAB.backendlist[:zarr3] = ZarrDataset{3}
+    push!(YAB.backendregex, r"(.zarr$)|(.zarr/$)|(zarr.zip$)" => ZarrDataset{Int(ZarrCore.DV)})
 end
 
-struct ZarrDataset
+struct ZarrDataset{ZF}
   g::ZGroup
+    zarr_format::ZarrCore.ZarrFormat{ZF}
 end
-function ZarrDataset(g::Union{String,ZGroup}; mode="r", path="", kwargs...)
-  if g isa ZGroup
-    return ZarrDataset(g)
-  end
+ZarrDataset(g::ZGroup; kwargs...) = ZarrDataset(g, g.zarr_format)
+function YAB.to_dataset(T::Type{<:ZarrDataset}, g::String; mode="r", path="", kwargs...)
+  # The returned ZarrDataset{ZF} is derived from the actual format of the store
+  # (g.zarr_format), not from T. The requested T/driver only selects the backend
+  # class, so reading a v2 store with driver=:zarr3 yields ZarrDataset{2}.
   store = if endswith(g, "zip")
     YAB.zarr_zipstore(g)
   else
@@ -59,16 +63,11 @@ Base.haskey(ds::ZarrDataset, k) = haskey(ds.g, k)
 # end
 
 function YAB.add_var(p::ZarrDataset, T::Type, varname, s, dimnames, attr;
-  chunksize=s, fill_as_missing=false, zarr_format=nothing, kwargs...)
-  # The format is set by the group in create_empty. zarr_format and ZarrFormat are not public in ZarrCore
-  group_format = ZarrCore.zarr_format(p.g)
-  if zarr_format !== nothing && ZarrCore.ZarrFormat(zarr_format) != group_format
-    throw(ArgumentError("Can not create a Zarr v$zarr_format array in a Zarr v$(Int(group_format)) group"))
-  end
+    chunksize=s, fill_as_missing=false, kwargs...)
   if !haskey(kwargs, :compressor) && ZarrCore.default_compressor() isa NoCompressor
     @info "No Zarr compressor package is loaded, so data will be written uncompressed. Load e.g. ZarrBlosc or Zarr to enable compression." maxlog = 1
   end
-  if group_format == ZarrCore.ZarrFormat(2)
+    if p.zarr_format == ZarrCore.ZarrFormat(2)
     attr2 = merge(attr, Dict("_ARRAY_DIMENSIONS" => reverse(collect(String, dimnames))))
   else
     attr2 = attr
@@ -92,8 +91,10 @@ function YAB.add_var(p::ZarrDataset, a::AbstractArray, varname, dimnames, attr;
   a
 end
 
-YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict(); zarr_format=2, kwargs...) =
-  ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., zarr_format; attrs=gatts))
+YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict()) =
+    ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., Int(ZarrCore.DV); attrs=gatts))
+YAB.create_empty(::Type{ZarrDataset{ZF}}, path, gatts=Dict()) where ZF =
+    ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., ZF; attrs=gatts))
 
 
 

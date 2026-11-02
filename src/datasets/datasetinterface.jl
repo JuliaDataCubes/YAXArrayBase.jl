@@ -16,10 +16,9 @@ function get_global_attrs end
 
 #Functions to be implemented for Dataset sinks
 """
-    create_empty(T, path, gatts; kwargs...)
+    create_empty(T, path, gatts)
 
-Initialize and return a handle to a new empty dataset. Backends ignore keyword
-arguments they do not support.
+Initialize and return a handle to a new empty dataset. 
 """
 function create_empty end
 
@@ -61,13 +60,10 @@ function add_var(ds,x::AbstractArray,name,dimlist,atts;kwargs...)
 end
 
 function create_dataset(T::Type, path, gatts, dimnames, dimvals, dimattrs, vartypes, varnames, vardims, varattrs, varchunks; kwargs...)
-  ds = create_empty(T, path, gatts; kwargs...)
-  axlengths = Dict{String, Int}()
-  # Coordinates share the compression settings (Zarr compressor, NetCDF compress),
-  # other options like filters may be type specific
-  coordkwargs = (; (k => v for (k, v) in pairs(kwargs) if k in (:compressor, :compress))...)
+    ds = create_empty(T, path, gatts)
+    axlengths = Dict{String,Int}()
   for (dname, dval, dattr) in zip(dimnames, dimvals, dimattrs)
-    add_var(ds, dval, dname, (dname,), dattr; coordkwargs...)
+        add_var(ds, dval, dname, (dname,), dattr)
     axlengths[dname] = length(dval)
   end
   for (T, vn, vd, va, vc) in zip(vartypes, varnames, vardims, varattrs, varchunks)
@@ -97,7 +93,7 @@ when `ZarrZip` is loaded.
 """
 zarr_zipstore(path) = throw(ArgumentError("Reading zipped Zarr stores requires ZarrZip. Run `using ZarrZip` (or `using Zarr`) first."))
 
-function backendfrompath(g::String; driver = :all)
+function backendfrompath(g::String; driver=:all)
   if driver == :all
     isempty(backendregex) && throw("No backend found. Load a backend by using the corresponding package.")
     for p in YAXArrayBase.backendregex

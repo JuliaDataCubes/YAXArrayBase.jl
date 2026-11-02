@@ -102,7 +102,7 @@ function YAB.add_var(p::NetCDFDataset, T::Type, varname, s, dimnames, attr;
   NetCDFVariable{T,length(s)}(p.filename,varname,(s...,))
 end
 
-function YAB.create_empty(::Type{NetCDFDataset}, path, gatts=Dict(); kwargs...)
+function YAB.create_empty(::Type{NetCDFDataset}, path, gatts=Dict())
   NetCDF.create(_->nothing, path, NcVar[], gatts = gatts)
   NetCDFDataset(path)
 end
