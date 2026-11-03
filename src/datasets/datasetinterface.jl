@@ -15,7 +15,11 @@ function get_var_attrs end
 function get_global_attrs end
 
 #Functions to be implemented for Dataset sinks
-"Initialize and return a handle to a new empty dataset"
+"""
+    create_empty(T, path, gatts)
+
+Initialize and return a handle to a new empty dataset. 
+"""
 function create_empty end
 
 "Apply a function `f` on a dataset `ds` while keeping possible file handles open during the operations"
@@ -56,10 +60,10 @@ function add_var(ds,x::AbstractArray,name,dimlist,atts;kwargs...)
 end
 
 function create_dataset(T::Type, path, gatts, dimnames, dimvals, dimattrs, vartypes, varnames, vardims, varattrs, varchunks; kwargs...)
-  ds = create_empty(T, path, gatts)
-  axlengths = Dict{String, Int}()
+    ds = create_empty(T, path, gatts)
+    axlengths = Dict{String,Int}()
   for (dname, dval, dattr) in zip(dimnames, dimvals, dimattrs)
-    add_var(ds, dval, dname, (dname,), dattr)
+        add_var(ds, dval, dname, (dname,), dattr)
     axlengths[dname] = length(dval)
   end
   for (T, vn, vd, va, vc) in zip(vartypes, varnames, vardims, varattrs, varchunks)
@@ -81,7 +85,15 @@ backendlist = OrderedDict{Symbol, Any}(
 
 backendregex = Pair[]
 
-function backendfrompath(g::String; driver = :all)
+"""
+    zarr_zipstore(path)
+
+Open the zipped Zarr store at `path`. Used by the Zarr backend and implemented
+when `ZarrZip` is loaded.
+"""
+zarr_zipstore(path) = throw(ArgumentError("Reading zipped Zarr stores requires ZarrZip. Run `using ZarrZip` (or `using Zarr`) first."))
+
+function backendfrompath(g::String; driver=:all)
   if driver == :all
     isempty(backendregex) && throw("No backend found. Load a backend by using the corresponding package.")
     for p in YAXArrayBase.backendregex
