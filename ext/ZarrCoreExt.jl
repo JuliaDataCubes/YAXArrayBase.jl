@@ -16,8 +16,9 @@ struct ZarrDataset{ZF}
   g::ZGroup
     zarr_format::ZarrCore.ZarrFormat{ZF}
 end
-ZarrDataset(g::ZGroup; kwargs...) = ZarrDataset(g, g.zarr_format)
-function YAB.to_dataset(T::Type{<:ZarrDataset}, g::String; mode="r", path="", kwargs...)
+ZarrDataset{ZF}(path::AbstractString; kwargs...) where ZF = ZarrDataset{ZF}(zopen(path;kwargs...))
+ZarrDataset{ZF}(g::ZGroup; kwargs...) where ZF= ZarrDataset(g, g.zarr_format)
+function YAB.to_dataset(T::Type{<:ZarrDataset{ZF}}, g::String; mode="r", path="", kwargs...) where ZF
   # The returned ZarrDataset{ZF} is derived from the actual format of the store
   # (g.zarr_format), not from T. The requested T/driver only selects the backend
   # class, so reading a v2 store with driver=:zarr3 yields ZarrDataset{2}.
@@ -26,7 +27,7 @@ function YAB.to_dataset(T::Type{<:ZarrDataset}, g::String; mode="r", path="", kw
   else
     g
   end
-  ZarrDataset(zopen(store, mode, fill_as_missing=false, path=path))
+  ZarrDataset{ZF}(zopen(store, mode, fill_as_missing=false, path=path))
 end
 
 function YAB.get_var_dims(ds::ZarrDataset, name)
@@ -94,13 +95,13 @@ end
 YAB.create_empty(::Type{ZarrDataset}, path, gatts=Dict()) =
     ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., Int(ZarrCore.DV); attrs=gatts))
 YAB.create_empty(::Type{ZarrDataset{ZF}}, path, gatts=Dict()) where ZF =
-    ZarrDataset(zgroup(ZarrCore.storefromstring(path, true)..., ZF; attrs=gatts))
+    ZarrDataset{ZF}(zgroup(ZarrCore.storefromstring(path, true)..., ZF; attrs=gatts))
 
 
 
 YAB.allow_parallel_write(::ZarrDataset) = true
 YAB.allow_missings(::ZarrDataset) = false
-YAB.to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g; kwargs...)
+YAB.to_dataset(g::ZGroup; kwargs...) = ZarrDataset(g, ZarrCore.zarr_format(g))
 # get_pipeline, V2Pipeline and V3Pipeline are not public in ZarrCore
 YAB.iscompressed(a::ZArray) = _iscompressed(ZarrCore.get_pipeline(a.metadata))
 _iscompressed(p::ZarrCore.V2Pipeline) = !isa(p.compressor, NoCompressor)
